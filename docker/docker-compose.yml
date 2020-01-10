@@ -1,0 +1,35 @@
+version: '3'
+services:
+  grafana:
+    image: grafana/grafana:5.4.2
+    ports:
+    - "3000:3000"
+    depends_on:
+    - prom
+
+  prom:
+    image: prom/prometheus:v2.6.0
+    volumes:
+    - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus"
+    ports:
+    - 9090:9090
+    depends_on:
+    - student
+    - frontend
+
+  student:
+    image: acme/student:1.0
+    ports:
+    - "8081:8081"
+    healthcheck:
+      test: curl --fail -s http://localhost:8081/health/live || exit 1
+      timeout: 5s
+      interval: 1s
+      retries: 0
+
+
+  frontend:
+    image: acme/frontend:1.0
+    ports:
+    - "8080:8080"

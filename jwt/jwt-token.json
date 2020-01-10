@@ -1,0 +1,12 @@
+{
+  "iss":"airhacks",
+  "jti":"airhacks-jwt-unique-id-12342142",
+  "sub":"user/43971",
+  "upn":"demo@acme.org",
+  "exp":3155882898,
+  "myc":"My Custom Claim",
+  "groups":[
+    "user",
+    "admin"
+  ]
+}

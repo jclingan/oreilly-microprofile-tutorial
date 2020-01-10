@@ -1,0 +1,2364 @@
+= Developing Microservices with MicroProfile using Quarkus
+
+
+:toc: left
+
+== Introduction
+
+This hands-on tutorial shows, in a hands-on manner, how to develop with a significant portion of the MicroProfile core specifications, including MicroProfile Config, Rest Client, Fault Tolerance, Metrics, Health, and JWT RBAC. This lab assumes familiarity with JAX-RS and CDI, although having experience with Spring DI and Spring MVC is likely sufficient.
+
+The domain model for this tutorial is simply a `student` service returns a list of students, and a `frontend` service invokes the student service. The simpler the model, the easier it will be to grasp the focus of this tutorial - MicroProfile APIs!
+
+The documented steps in this lab follow a pattern:
+
+. Write code
+. Run a command to test code (curl)
+. Check output
+
+This pattern flows quickly due to Quarkus' Live Coding feature, and makes checking code changes near-instantaneous so each change can be immediately evaluated.
+
+NOTE: This tutorial will require three terminal windows. Each command block will display the terminal where the command is to be run (_Terminal 1_, _Terminal 2_, _Terminal 3_). As the tutorial progresses, it helps to organize the terminals on your screen so they can all be viewed at the same time. In addition, each code block will show the name of the file to be edited (ex: "StudentResource.java")
+
+The source code is available in GitHub.
+
+The presentation is available [red]#Location TBD#
+
+== Create Student Service
+
+Create a simple Quarkus project as a starting point - the "student" service. A default RESTful endpoint is generated. While this workshop utilizes the mvn command line tooling, projects can also be generated at http://code.quarkus.io[code.quarkus.io] using a Web UI.
+
+. Go to the project's base directory and create project using maven
++
+--
+
+.Terminal 1
+[source,bash]
+----
+# In each terminal, set PROJ_BASEDIR, the project top-level-directory,
+#   to somewhere on your local drive
+$ export PROJ_BASEDIR=<path-to-your project>
+$ mkdir $PROJ_BASEDIR
+$ cd $PROJ_BASEDIR
+$ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
+    -DprojectGroupId=org.acme \
+    -DprojectArtifactId=student \
+    -DclassName="org.acme.StudentResource" \
+    -Dpath="/student" \
+    -Dextensions="resteasy-jsonb,smallrye-health"
+----
+--
+
+. Optional: To see a list of available extensions, type:
+
++
+--
+
+.Terminal 1
+[source,bash]
+----
+$ mvn quarkus:list-extensions
+----
+--
+
+. Open project in your favorite IDE
+.. Open StudentResource.java and peruse the JAX-RS source code
+
++
+--
+.StudentResource.java
+[source,java]
+----
+package org.acme;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+@Path("/student")
+public class StudentResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return "hello";
+    }
+}
+----
+--
+
++
+NOTE: The generated project does not include a JAX-RS Application class. Quarkus will provide a default JAX-RS Application class if one is not provided by the developer. In addition, a single instance of a RESTful resource is created by default. These are non-portable developer convenience features. These points are covered in the https://quarkus.io/guides/getting-started#the-jax-rs-resources[Quarkus Getting Started Guide].
+
+. Start Quarkus in developer mode
+
++
+--
+.Terminal 1
+[source,bash]
+----
+$ mvn quarkus:dev
+----
+--
++
+
+// ***********************************************
+
+. Check that the endpoint returns "hello"
+
++
+--
+.Terminal 2
+[source,bash]
+----
+$ curl -i localhost:8080/student
+----
+.Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+hello
+....
+--
++
+
+// ***********************************************
+
+. Experience live reload. In the StudentResource.java hello() method, replace "Hello" with "Howdy" and save the file
++
+.StudentResource.java
+[source,java]
+----
+public class StudentResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return "Howdy"; <1>
+    }
+}
+----
+<1> Replace "Hello" with "Howdy"
+
++
+
+.Terminal 2
+[source,bash]
+----
+$ curl -i localhost:8080/student
+----
++
+.Terminal 2 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+Howdy
+....
+
++
+
+// *********************************************
+
+. In StudentResource.java, create a list of Strings:
++
+--
+.StudentResource.java
+[source,java]
+----
+@Path("/student")
+public class StudentResource {
+    List<String> students = new ArrayList<>(); <1>
+----
+<1> Add this line
+--
+
+. Add a method called listStudents at the "/list" path that returns the students as a JSON array
++
+--
+.StudentResource.java
+[source,java]
+----
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> listStudents() {
+    return students;
+}
+----
+--
+
+. Check the output
++
+.Terminal 2
+--
+[source,bash]
+----
+$ curl -i localhost:8080/student/list
+----
+--
+
++
+--
+
+.Terminal 2 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+--
+
+== MicroProfile Config
+
+This section covers the MicroProfile CDI injection-based API for externalizing configuration. In these instructions, configuration parameters are stored in src/main/resources/application.properties.
+
+NOTE: The instructor uses https://code.visualstudio.com/[Visual Studio Code]. While Quarkus supports the MicroProfile standard src/main/resources/META-INF/microprofile-config.properties file, the Quarkus Visual Studio code plugin https://github.com/redhat-developer/vscode-quarkus/issues/181[does not yet] support code completion and syntax highlighting of microprofile-config.properties. As a result, this workshop uses application.properties.
+
+. Create doDelay() method to delay 3000 milliseconds and print "Waiting 3000 milliseconds" to stdout.
++
+--
+.StudentResource.java
+[source,java]
+----
+void doDelay() {
+    int delayTime;
+    try {
+        delayTime=3000;
+        System.out.println("** Waiting " + delayTime + "ms **");
+        TimeUnit.MILLISECONDS.sleep(delayTime);
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+}
+----
+--
+
+. In listStudents(), call doDelay()
++
+--
+.StudentResource.java
+[source,java]
+----
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> listStudents() {
+    doDelay(); // <1>
+    return students;
+}
+----
+<1> Insert `doDelay()` call
+
+--
+. Check the endpoint, which should take longer to complete
++
+--
+.Terminal 2
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 3 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output (after 3 seconds)
+....
+** Waiting 3000ms ** <1>
+....
+
+<1> Output from doDelay()
+--
++
+
+// *********************************************
+
+. Inject delay property value into variable delay
++
+--
+.StudentResource.java
+[source,java]
+----
+@Inject
+@ConfigProperty(name="delay")
+int delay;
+----
+--
+. In doDelay(), replace hard-coded "3000" with the delay variable
++
+--
+.StudentResource.java
+[source,java]
+----
+void doDelay() {
+    int delayTime;
+    try {
+        delayTime=delay;  // <1>
+        System.out.println("** Waiting " + delayTime + "ms **");
+        TimeUnit.MILLISECONDS.sleep(delayTime);
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+}
+----
+<1> Replace `3000` with `delay`, as shown
+--
+
+. Verify an error is generated because the delay property has not been defined.
++
+--
+.Terminal 2
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+
+.Terminal 2 Output (Stack Trace)
+....
+Caused by: javax.enterprise.inject.spi.DeploymentException: No config value of type [int] exists for: delay
+....
+--
++
+
+// *********************************************
+
+. Define `delay` property in src/main/resources/application.properties:
++
+--
+.application.properties
+[source, property]
+----
+# Configuration file
+# key = value
+
+delay=2500 <1>  
+----
+<1> Add this line
+--
+
+. Verify property is read. Also notice that live reload works with property file changes.
++
+--
+.Terminal 2
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 2.5 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2500ms **
+....
+--
++
+
+// *********************************************
+
+
+. Update @ConfigProperty annotation with a default value of 2000.
++
+--
+.StudentResource.java
+[source,java]
+----
+@Inject
+@ConfigProperty(name="delay", defaultValue="2000") <1>
+int delay;
+----
+<1> Insert `, defaultValue=2000`
+--
+
+. Verify defaultValue is read.
++
+--
+.Terminal 2
+[source,bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 2 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+
+// *********************************************
+
+
+. Stop running Quarkus process.
++
+--
+.Terminal 1
+[source, bash]
+----
+# Press CTRL-C to stop Quarkus
+----
+--
++
+
+// *********************************************
+
+. Define `DELAY` environmental variable
++
+--
+.Terminal 1
+[source, bash]
+----
+export DELAY=4000
+----
+--
++
+
+// *********************************************
+
+. Restart Quarkus.
++
+--
+.Terminal 1
+[source,bash]
+----
+$ mvn quarkus:dev
+----
+--
++
+
+// *********************************************
+
+. Verify the `DELAY` environment variable overrides the value in the property file.
+
++
+--
+
+.Terminal 2
+[source,bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 4 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 4000ms **
+....
+--
++
+
+// *********************************************
+
+. Stop Quarkus
++
+--
+.Terminal 1
+[source, bash]
+----
+# Press CTRL-C to stop Quarkus
+----
+--
+
+. Re-start Quarkus and define system property via CLI.
++
+--
+.Terminal 1
+[source, bash]
+----
+$ mvn quarkus:dev -Ddelay=5000
+----
+--
++
+
+// *********************************************
+
+. Verify the `DELAY` system property overrides the value in the property file. In _Terminal 2_, type
++
+--
+.Terminal 2
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 5 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 5000ms **
+....
+--
++
+
+// *********************************************
+
+. Clean up by stopping Quarkus and unsetting DELAY environment variable
++
+--
+.Terminal 1
+[source, bash]
+----
+# *** First, press CTRL-C to stop Quarkus ***
+# Next, remove DELAY environment variable
+unset DELAY
+----
+--
++
+
+// *********************************************
+
+. Comment out `delay` since there is now a default value, and change the Quarkus HTTP port. Update application.proporties to look as follows:
++
+--
+.application.properties
+[source, property]
+----
+#delay=2000  // <1>
+quarkus.http.port=8081 // <2>
+----
+<1> Comment `delay` property, as shown
+<2> Insert `quarkus.http.port` property
+--
+. Restart Quarkus without defining `delay` system property and change debug port.
++
+--
+.Terminal 1
+[source, bash]
+----
+$ mvn quarkus:dev -Ddebug=5006
+----
+--
++
+
+// *********************************************
+
+. Verify updated properties.
++
+--
+.Terminal 2
+[source,property]
+----
+# Note the port change to 8081!
+$ curl -i http://localhost:8081/student/list
+----
+
+.Terminal 2 Output (after 2 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+
+// *********************************************
+
+. In MicroProfile Config, comma-separated properties can be read as a List. Add the following to application.properties  to initialize the student list:
++
+--
+.application.properties
+[source]
+----
+students=Duke,John,Jane,Arun,Christina
+----
+--
++
+
+// *********************************************
+
+. Inject students into student list. Change List<String> students to:
++
+--
+.StudentResource.java
+[source,java]
+-----
+@Inject
+@ConfigProperty(name = "students")
+List<String> students = new ArrayList<>();
+-----
+--
+
+. Verify that students have been injected.
++
+--
+.Terminal 1
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 2 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
+
+== MicroProfile Rest Client
+
+This section will create a "frontend" service that will utilize the type-safe MicroProfile Rest Client API to invoke the student service. Additional Quarkus extensions (aka maven dependencies) aree  also added to support upcoming sections well.
+
+. Create frontend project using mvn command line
++
+--
+.Terminal 2
+[source,bash]
+----
+$ cd $PROJ_BASEDIR
+$ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
+    -DprojectGroupId=org.acme \
+    -DprojectArtifactId=frontend \
+    -DclassName="org.acme.FrontendResource" \
+    -Dpath="/frontend" \
+    -Dextensions="resteasy-jsonb,metrics,rest-client,fault-tolerance"
+----
+--
++
+
+// *********************************************
+
+. Open frontend project in your IDE
++
+// *********************************************
+
+. Start frontend in Quarkus dev mode
++
+--
+.Terminal 2
+[source,bash]
+----
+$ mvn compile quarkus:dev
+----
+--
++
+
+// *********************************************
+
+
+. Create src/main/java/org/acme/StudentRestClient.java and paste in the following content
++
+--
+.frontend/src/main/java/org/acme/StudentRestClient.java
+[source,java]
+----
+package org.acme;
+
+import java.util.List;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+
+@RegisterRestClient(baseUri = "http://localhost:8081")
+@Path("/student")
+public interface StudentRestClient {
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello();
+
+    @GET
+    @Path("/list")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> listStudents();
+}
+----
+--
++
+
+// *********************************************
+
+. Inject StudentRestClient into FrontendResource.java
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Inject
+@RestClient
+StudentRestClient student;
+----
+--
++
+
+// *********************************************
+
+. Change hello() method to invoke student service hello endpoint
++
+--
+.FrontendResource.java
+[source,java]
+----
+@GET
+@Produces(MediaType.TEXT_PLAIN)
+public String hello() {
+    return student.hello(); // <1>
+}
+----
+<1> Replace `"hello"` with `student.hello()`, as shown
+--
+
+. Check endpoint works properly
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+Howdy
+....
+--
++
+
+// *********************************************
+
+. Remove baseURI parameter from @RegisterRestClient so it can be configured using a property
++
+--
+.StudentRestClient.java
+[source,java]
+----
+@RegisterRestClient <1>
+----
+<1> Removed `(baseUri = "http://localhost:8081")`
+--
++
+
+// *********************************************
+
+. Configure rest client baseUri in application.properties
++
+--
+.frontend application.properties
+[source,properties]
+----
+org.acme.StudentService/mp-rest/uri=http://localhost:8081
+----
+--
+
+. Check endpoint
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+Howdy
+....
+--
++
+
+// *********************************************
+
+. Update @RegisterRestClient annotation to specify configKey in StudentRestClient.java
++
+--
+.StudentRestClient.java
+[source,java]
+----
+@RegisterRestClient(configKey = "StudentService")
+----
+--
++
+
+// *********************************************
+
+. Update the frontend application.properties to utilize the configKey
++
+--
+.frontend application.properties
+[source,properties]
+----
+StudentService/mp-rest/uri=http://localhost:8081
+----
+--
+
+. Check endpoint
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+Howdy
+....
+--
++
+
+// *********************************************
+
+. Add listStudents() method to FrontendResource.java.
++
+--
+.FrontendResource.java
+[source,java]
+----
+@GET
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/list")
+public List<String> listStudents() {
+    return student.listStudents();
+}
+----
+--
++
+
+// *********************************************
+
+. Specify a StudentRestClient readTimeout in frontend application.properties that will throw an exception if read time threshold is exceeded
++
+--
+.frontend application.properties
+[source,properties]
+----
+StudentService/mp-rest/readTimeout = 1000 <1>
+----
+<1> Add this
+--
+
+. Check endpoint, which should result in a "java.net.SocketTimeoutException: Read timed out" because Student doDelay() method is set at a 2000ms delay.
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+# Stack trace ...
+Unable to invoke request: java.net.SocketTimeoutException: Read timed out
+# Stack trace ...
+....
+.Terminal 2 Output
+....
+# Stack trace ...
+Unable to invoke request: java.net.SocketTimeoutException: Read timed out
+# Stack trace ...
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+. Comment out the readTimeout property in application.properties to avoid exception
++
+--
+.frontend application.properties
+[source,properties]
+----
+#StudentService/mp-rest/readTimeout = 1000 <1>
+----
+<1> Comment this out
+--
+
+. Check endpoint
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
+
+== MicroProfile Fault Tolerance
+
+This section will utilize fault tolerance patterns in the frontend service to handle problematic conditions caused by the student service.
+
+. Add a timeout to FrontendResource listStudents()
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Timeout  <1>
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> listStudents() {
+    return student.listStudents();
+}
+----
+<1> Add Timeout annotation, which defaults to 1000ms
+--
+
+. Check endpoint. Verify org.eclipse.microprofile.faultolerance.exceptions.TimeoutException is thrown.
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+# Stack trace ...
+com.netflix.hystrix.exception.HystrixRuntimeException: org_acme_FrontendResource#listStudents() timed-out and no fallback available.Unable to invoke request: java.net.SocketTimeoutException: Read timed out
+# Stack trace ...
+....
+.Terminal 2 Output
+....
+# Stack trace ...
+com.netflix.hystrix.exception.HystrixRuntimeException: org_acme_FrontendResource#listStudents() timed-out and no fallback available.
+# Stack trace ...
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+
+// *********************************************
+
+. Add a fallback method to provide alternative logic when an exception is thrown
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Fallback(fallbackMethod = "listStudentsFallback") <1>
+@Timeout
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> listStudents() {
+    return student.listStudents();
+}
+
+// Add this method <2>
+public List<String> listStudentsFallback() {
+    // Return top students across all classes
+    return Arrays.asList("Smart Sam", "Genius Gabby", "A-Student Angie", "Intelligent Irene");
+}
+----
+<1> Add Fallback annotation
+<2> Add fallback method. Note, it must have same method signature
+--
+
+. Check endpoint. Verify the fallback student list is retrieved
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json
+
+["Smart Sam","Genius Gabby","A-Student Angie","Intelligent Irene"]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+
+// *********************************************
+
+. Disable all fault tolerance annotations (except Fallback). Useful for when running in a service mesh (e.g. Istio) environment. Commenting out any one of the Timeout-disabling properties will disable the timeout.
++
+--
+.frontend application.properties
+[source,properties]
+----
+# Disable fault tolerance globally
+MP_Fault_Tolerance_NonFallback_Enabled=false <1>
+
+# Disable group policy:
+#Timeout/enabled=false
+
+# Disable a specific fault tolerance policy. Ex:
+#org.acme.FrontendResource/listStudents/Timeout/enabled=false
+----
+<1> All fault tolerance annotations disabled because this annotation is not commented out
+--
+
+. Check that original list of students is returned
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+
+// *********************************************
+
+. Comment out MP_Fault_Tolerance_NonFallback_Enabled=false in application.properties
++
+--
+.frontend application.properties
+[source,properties]
+----
+# Disable fault tolerance globally
+#MP_Fault_Tolerance_NonFallback_Enabled=false <1>
+
+# Disable group policy:
+#Timeout/enabled=false
+
+# Disable a specific fault tolerance policy. Ex:
+#org.acme.FrontendResource/listStudents/Timeout/enabled=false
+----
+<1> Commented out
+--
+
+. Check endpoint. Verify fallback list of students is retrieved
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json
+
+["Smart Sam","Genius Gabby","A-Student Angie","Intelligent Irene"]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+
+// *********************************************
+
+. Update doDelay() in StudentResource.java to return a random delay.
++
+--
+.StudentResource.java
+[source,java]
+----
+void doDelay() {
+    int delayTime;
+    try {
+        delayTime=(int)(Math.random()*delay); <1>
+        System.out.println("** Waiting " + delayTime + "ms **");
+        TimeUnit.MILLISECONDS.sleep(delayTime);
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+}
+----
+<1> Updated code to print random number: `delayTime=(int)(Math.random()*delay);`
+--
+
+. Verify random sleep time.
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json
+
+["Smart Sam","Genius Gabby","A-Student Angie","Intelligent Irene"]
+or
+["Duke","John","Jane","Arun","Christina"]                   
+....
+
+NOTE: Because the delay is random, a longer delay will return the fallback student list, and a shorter delay will return the original student list.
+
+.Terminal 1 Output
+....
+** Waiting 1-1000ms ** <1>
+....
+<1> This will be a random number between 1 and 1000
+
+NOTE: Retry a few times to see random sleep times. Keep retrying until Timeout threshold is reached and fallback method is called.
+--
++
+
+// *********************************************
+
+. Add a @Retry annotation, which by default will retry a request up to 3 times when exception is caught (e.g. TimeoutException)
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Timeout
+@Retry  <1>
+@Fallback(fallbackMethod = "getStudentsFallback")
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> getStudents() {
+    return student.listStudents();
+}
+----
+<1> Add this
+--
+
++
+
+// *********************************************
+
+. Check retry logic
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json
+
+["Smart Sam","Genius Gabby","A-Student Angie","Intelligent Irene"]
+or
+["Duke","John","Jane","Arun","Christina"]                               
+....
+
+.Terminal 1 Output
+....
+** Waiting 1-1000ms ** <1>
+....
+<1> One line will be displayed if less than 500ms, more than one line if more than 500ms due to retry
+
+NOTE: Re-run command until there are at least two output lines in Terminal 1 for a single `curl` command, at least one of which will be more than 500ms.
+--
++
+
+// *********************************************
+
+. Replace Timeout logic with a CircuitBreaker
++
+--
+.FrontendResource.java
+[source,java]
+----
+// @Timeout                         <1>
+@Retry(maxRetries = 4,delay = 1000) <2>
+@CircuitBreaker(                    <3>
+    requestVolumeThreshold = 4,     <4>
+    failureRatio = 0.5,             <5>
+    delay = 10000,                  <6>
+    successThreshold = 2            <7>
+    )
+@Fallback(fallbackMethod = "getStudentsFallback")
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> getStudents() {
+    return student.listStudents();
+}
+----
+<1> Comment out @Timeout
+<2> Update to retry up to 4 times, with a delay of 1000ms between each retry
+<3> Add a circuit breaker. If circuit breaker throws a CircuitBreakerOpen exception, the @Retry annotation will retry the request.
+<4> Rolling window of 4 requests.
+<5> % of failures within the window that cause the circuit breaker to transition to "open"state
+<6> Wait 1000 milliseconds before allowing another request. Until then, each request will result in a CircuitBreakerOpen exception
+<7> Number of consecutive successful requests before circuit transitions from the half-open state to the closed state. The circuit breaker enters the half-open state upon the first successful request.
+--
+
+. Check CircuitBreaker logic
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]                               
+....
+
+.Terminal 1 Output
+....
+** Waiting 1-1000ms **
+....
+--
++
+
+// *********************************************
+
+
+. Stop student service
++
+--
+.Terminal 1
+[source,bash]
+----
+CTRL-C
+----
+--
+
+. Check the circuit breaker
++
+--
+.Terminal 3
+[source,bash]
+----
+curl -i localhost:8080/frontend/list
+----
+--
++
+
+This will result in circuit breaker entering "open" state and throws a CircuitBreakerOpenException, which is caught by fallback logic to invoke fallback method. Try running this a few times.
++
+
+// *********************************************
+
+. Re-run student service
++
+--
+.Terminal 1
+[source,bash]
+----
+mvn quarkus:dev -Ddebug=5006
+----
+--
+
+. Retry until circuit breaker closes and the normal student list is displayed.
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json
+
+["Smart Sam","Genius Gabby","A-Student Angie","Intelligent Irene"]
+....
+--
+Retry the command until the primary student list is displayed.
++
+NOTE: The @Retry requests apply towards the circuit breaker success/fail counts. The fallback logic will be called for 10 seconds (CircuitBreaker delay parameter), at which point two successful attempts will flip the circuit breaker to closed state.
+
+== MicroProfile Metrics
+
+This section will cover business and performance metrics that will be graphed in Prometheus and Grafana in the packaging section.
+
+. View all default metrics (in Prometheus/OpenMetrics format)
++
+--
+.Terminal 3
+[source, bash]
+----
+$ curl -i http://localhost:8080/metrics
+----
+--
+
+. View base metrics (in JSON this time)
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H "Accept: application/json" \
+http://localhost:8080/metrics/base
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, HEAD
+Access-Control-Max-Age: 1209600
+Access-Control-Allow-Headers: origin, content-type, accept, authorization
+Content-Type: application/json
+content-length: 630
+
+
+{
+    "gc.total;name=PS MarkSweep": 2,
+    "cpu.systemLoadAverage": 2.1572265625,
+    "thread.count": 78,
+    "classloader.loadedClasses.count": 8145,
+    "classloader.unloadedClasses.total": 26,
+    "gc.total;name=PS Scavenge": 7,
+    "gc.time;name=PS MarkSweep": 75,
+    "jvm.uptime": 6725918,
+    "thread.max.count": 158,
+    "memory.committedHeap": 879230976,
+    "classloader.loadedClasses.total": 8171,
+    "cpu.availableProcessors": 12,
+    "gc.time;name=PS Scavenge": 72,
+    "thread.daemon.count": 12,
+    "memory.maxHeap": 7635730432,
+    "cpu.processCpuLoad": 0.00015370844246171116,
+    "memory.usedHeap": 102588008
+}
+....
+--
++
+
+// *********************************************
+
+. View vendor-specific (Quarkus) metrics (in JSON)
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H "Accept: application/json" \
+http://localhost:8080/metrics/vendor
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, HEAD
+Access-Control-Max-Age: 1209600
+Access-Control-Allow-Headers: origin, content-type, accept, authorization
+Content-Type: application/json
+content-length: 933
+
+
+{
+    "memory.freePhysicalSize": 185147392,
+    "memoryPool.usage;name=Metaspace": 41917128,
+    "memoryPool.usage.max;name=PS Eden Space": 534773760,
+    "memoryPool.usage;name=PS Eden Space": 0,
+    "memoryPool.usage.max;name=PS Old Gen": 26178520,
+    "memoryPool.usage;name=PS Old Gen": 26162136,
+    "cpu.processCpuTime": 23883246000,
+    "memory.committedNonHeap": 62717952,
+    "memoryPool.usage.max;name=PS Survivor Space": 22014064,
+    "memoryPool.usage.max;name=Compressed Class Space": 5191952,
+    "memoryPool.usage;name=Code Cache": 12367808,
+    "memory.freeSwapSize": 185192448,
+    "memoryPool.usage.max;name=Metaspace": 41909544,
+    "cpu.systemCpuLoad": 0.059001660401582626,
+    "memoryPool.usage.max;name=Code Cache": 12367808,
+    "memory.usedNonHeap": 59479424,
+    "memoryPool.usage;name=PS Survivor Space": 20868400,
+    "memoryPool.usage;name=Compressed Class Space": 5193208,
+    "memory.maxNonHeap": -1
+}
+....
+--
++
+
+// *********************************************
+
+. View application metrics (in JSON)
++
+
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H "Accept: application/json" \
+http://localhost:8080/metrics/application
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, HEAD
+Access-Control-Max-Age: 1209600
+Access-Control-Allow-Headers: origin, content-type, accept, authorization
+Content-Type: application/json
+content-length: 1162
+
+
+{
+    "ft.org.acme.FrontendResource.listStudents.circuitbreaker.closed.total": 229004662188,
+    "ft.org.acme.FrontendResource.listStudents.circuitbreaker.callsFailed.total": 4,
+    "ft.org.acme.FrontendResource.listStudents.retry.callsSucceededNotRetried.total": 5,
+    "ft.org.acme.FrontendResource.listStudents.invocations.total": 9,
+    "ft.org.acme.FrontendResource.listStudents.circuitbreaker.open.total": 138015497877,
+    "ft.org.acme.FrontendResource.listStudents.retry.callsFailed.total": 4,
+    "ft.org.acme.FrontendResource.listStudents.retry.retries.total": 16,
+...
+...
+...
+....
+--
++
+
+// *********************************************
+
+. Add @Counted to FrontendResource, counting invocations for each method
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Counted     <1>
+@Path("/frontend")
+public class FrontendResource {
+
+    @Inject
+    @RestClient
+    StudentRestClient student;
+// ...
+----
+<1> Add @Counted annotation
+--
++
+
+// *********************************************
+
+. Time getStudents() method duration
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Timed(absolute = true,                                      <1>
+       name = "listStudentsTime",                            <2>
+       displayName = "FrontendResource.listStudents()")      <3>
+@Retry(maxRetries = 4,delay = 1000)
+@CircuitBreaker(
+    requestVolumeThreshold = 4,
+    failureRatio = 0.5, 
+    delay = 10000,
+    successThreshold = 2)
+@Fallback(fallbackMethod = "getStudentsFallback")
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> getStudents() {
+    return student.listStudents();
+}
+----
+<1> *absolute* Remove package name. Metric uses name parameter if it exists, if not it uses the name of the class or method.
+<2> *name* Metric name (custom name)
+<3> *displayName* Human-readable name
+--
+
+. View Count metrics
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -s localhost:8080/metrics/application | grep -i count | grep -v TYPE
+----
+.Terminal 3 Output
+....
+application_listStudentsTime_rate_per_second 0.0064179960596986016
+application_listStudentsTime_one_min_rate_per_second 2.289677245305126E-5
+application_listStudentsTime_five_min_rate_per_second 0.0027034834474565605
+application_listStudentsTime_fifteen_min_rate_per_second 0.0026109713997948688
+application_listStudentsTime_min_seconds 0.712298109
+application_listStudentsTime_max_seconds 1.963374472
+application_listStudentsTime_mean_seconds 1.4476512202320395
+application_listStudentsTime_stddev_seconds 0.5326369162743406
+application_listStudentsTime_seconds_count 4.0
+application_listStudentsTime_seconds{quantile="0.5"} 1.91465394
+application_listStudentsTime_seconds{quantile="0.75"} 1.963374472
+application_listStudentsTime_seconds{quantile="0.95"} 1.963374472
+application_listStudentsTime_seconds{quantile="0.98"} 1.963374472
+application_listStudentsTime_seconds{quantile="0.99"} 1.963374472
+application_listStudentsTime_seconds{quantile="0.999"} 1.963374472
+....
+--
++
+
+// *********************************************
+
+. View Timed metrics
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/metrics/application | grep -i time | grep -v TYPE
+----
+.Terminal 3 Output
+....
+application_FrontendResourceCounter_listStudentsFallback_total 0.0
+application_FrontendResourceCounter_FrontendResource_total 1.0
+application_FrontendResourceCounter_hello_total 3.0
+application_FrontendResourceCounter_listStudents_total 4.0
+application_listStudentsTime_seconds_count 4.0
+....
+--
+
+NOTE: Notice some metrics have curly braces around them "{}". These are metric tags that subset a metric. See the https://github.com/jclingan/microprofile-quarkus-metrics-tags[metrics-tags example] to see metric tags in action.
+
+== MicroProfile Health
+
+This section will create an endpoint that exposes the health of the student service. The logic will result in the student service being healthy 50% of the time. This will be checked using a CLI, but in the packaging section will be checked using a docker-compose healthcheck.
+
+. Verify default health check endpoint
++
+--
+.Terminal 3
+....
+$ curl -i localhost:8081/health
+....
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+content-type: application/json; charset=UTF-8
+content-length: 46
+
+
+{
+    "status": "UP",
+    "checks": [
+    ]
+}
+....
+--
++
+
+// *********************************************
+
+. Create a MicroProfile Health Endpoint
++
+--
+.student/src/main/java/org/acme/StudentHealth.java
+[source,java]
+----
+package org.acme;
+
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Liveness;
+import org.eclipse.microprofile.health.Readiness;
+
+@Liveness  <1>
+@Readiness <2>
+public class StudentHealth implements HealthCheck {
+    @Override
+    public HealthCheckResponse call() {
+        double random = Math.random();
+        return HealthCheckResponse
+            .named("UnstableServiceCheck")         <3>
+            .state(random < .50 ? true : false)    <4>
+            .withData("randomNumber", "" + random) <5>
+            .build();
+    }
+}
+----
+<1> Restart unrecoverable service
+<2> Pause traffic until ready
+<3> A healthcheck can be named
+<4> State is UP (true) or DOWN (false)
+<5> Data can be added to provide state context
+
+NOTE: Retry a few times until both UP and DOWN have been displayed across subsequent requests. If here is more than one health check class in an application, then all must be UP for overall state to be UP.
+
+NOTE: Typically there would be a separate health check class for readiness and liveness, but shown here in a single class for "conciseness" under time constraints. 
+--
++
+
+// *********************************************
+
+. Check health liveness endpoint specifically
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/health/live
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 503 Service Unavailable  <1>
+content-type: application/json; charset=UTF-8
+content-length: 231
+
+
+{
+    "status": "DOWN",
+    "checks": [
+        {
+            "name": "UnstableServiceCheck",
+            "status": "DOWN",
+            "data": {
+                "randomNumber": "0.60806403626233085"
+            }
+        }
+    ]
+}
+....
+<1> The HTTP Reponse code will be 503 when a service is down
+
+NOTE: There is a /health/ready endpoint as well
+--
+
+
+== MicroProfile JWT RBAC
+
+This section will secure the student service and frontend service endpoints, and propagate a bearer token across services.
+
+NOTE: A token has already been generated using a supplied build of Adam Bien's https://github.com/AdamBien/jwtenizr[jwtenizr]. In addition, to facilitate these instructions, the token will last until 2120 :-)
+
+The pre-defined JWT token is shown below ([red]#header#, [green]#payload#, [blue]#signing-key#):
+
+[red]#eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ#.[green]#eyJzdWIiOiJkZW1vIiwidXBuIjoiZGVtbyIsIm15YyI6Ik15IEN1c3RvbSBDbGFpbSIsImF1dGhfdGltZSI6MTU3ODAxNTIwMCwiaXNzIjoiYWlyaGFja3MiLCJncm91cHMiOlsidXNlciIsImFkbWluIl0sImV4cCI6MzE1NTg4Mjg5OCwiaWF0IjoxNTc4MDE1MjAwLCJqdGkiOiI0MiJ9#.[blue]#FwepG_iol6g8-xEOxY_w8ptgeQcXAHIjuM4FmsK3QMLh9ADWjwEqkl6gsz1-CrMgnqM3zvx-gclGAiIMFIks9GGS2RvVujTrWo11OdiMSLPPprEU0LC3OKvOYgLslprYX0E-afyu-s4GrljkRL1d3xraSCbwrlnjA_dtQBHBX6R2tZBXWwm-Kr6FvZW04SyosrgEoTJrDrW09QUlwj80bTMtPVB_TEKbEE-gnguR2xEpNiSfhI_Y7waVzPU7cN4ZFjhbi9A-4TdwUFdtuyhBP0InukAjBmqjw4fU0MnCLCSHRuRKsXgAJdWQrRmoUV3isvt8N_gPsqm8jhyNi5miQQ#
+
+Because tokens are base64 encoded, they can be easily decoded, assuming you have a base64 (en)decoder. For example, here is how to decode the [red]#header# on MacOS X:
+
+[source,bash]
+----
+echo eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ | base64 -D -
+----
+
+.Output
+....
+{"kid":"jwt.key","typ":"JWT","alg":"RS256"
+....
+
+// *********************************************
+
+. Add the MicroProfile dependency to *both the student service and frontend service* pom.xml files.
++
+--
+.pom.xml
+[source,xml]
+----
+<dependency> <1>
+    <groupId>io.quarkus</groupId>
+    <artifactId>quarkus-smallrye-jwt</artifactId>
+</dependency>
+----
+<1> Add this
+--
+
+. Add required MicroProfile JWT RBAC properties to *both the student service and frontend service* application.property files.
++
+--
+.application.properties
+[source,property]
+----
+mp.jwt.verify.issuer=airhacks
+mp.jwt.verify.publickey=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtBR6TwVxolT5E2emnQEwqJztmeWRThU4ZA3V9+4vjOXoNmSKWrLfqLaKuMric9opYQi86yO1o0qChkAnlRY7ZytcaFqcehYOSAhcghYNn4Wzi70D2lJHj/YflFKdssySyNzqMIBMxNWZWx8kIVDRrVamsmF2Fo4Dg72ce8KiMSlqkWrHiSbfWpa2aQru9dEhErJPf05fGzQWwtvOvtLCp/tLXq7GmTE2XJJdiCk3CdE3OP/FQRWyeRtHk6Uq4hjzXTX6Wnrb7xDZCjQubfWYq9yoINet1eMFWFUXRsAJQbMJKIstcCvwmO35iPjFrftWTADOh3pzIARVqWwupDN7fwIDAQAB
+----
+--
+
+=== Securing Frontend Service
+
+. Create a new endpoint in FrontendResource.java to display the Principal
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Inject
+Principal principal;
+
+@GET
+@Path("/tokeninfo")
+@Produces(MediaType.TEXT_PLAIN)
+public String tokeninfo() {
+    String string = "Principal: " + principal.getName();
+    return string;
+}
+----
+--
+
+. Check endpoint, which should return 'null' since no principal has been supplied
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/tokeninfo
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 15
+Content-Type: text/plain;charset=UTF-8
+
+Principal: null
+....
+--
++
+
+// *********************************************
+
+. Re-run the command, this time supplying the token:
++
+--
+
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw'  http://localhost:8080/frontend/tokeninfo
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 15
+Content-Type: text/plain;charset=UTF-8
+
+Principal: demo
+....
+--
++
+
+// *********************************************
+
+. Update "/tokeninfo" endpoint to display  all claims
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Inject
+JsonWebToken token; <1>
+
+@GET
+@Path("/tokeninfo")
+@Produces(MediaType.TEXT_PLAIN)
+public String tokenInfo() { <2>
+    String string = "Principal: " + principal.getName();
+
+    string += ",\n";
+
+    string += token.getClaimNames()
+        .stream()
+        .map(tok -> "\n " + tok + ": " + token.getClaim(tok))
+        .collect(Collectors.toList())
+        .toString();
+
+    return string;
+}
+----
+<1> Inject the token
+<2> Replace the contents of tokenInfo
+--
++
+. Check the token output
+
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw'  http://localhost:8080/frontend/tokeninfo
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 816
+Content-Type: text/plain;charset=UTF-8
+
+Principal: demo,
+[
+ sub: demo, 
+ upn: demo, 
+ myc: My Custom Claim, 
+ raw_token: eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw, 
+ auth_time: 1578015200, 
+ iss: airhacks, 
+ groups: [admin, user], 
+ exp: 3155882898, 
+ iat: 1578015200, 
+ jti: 42]
+....
+--
++
+
+// *********************************************
+
+.  Secure endpoints by limiting access to specified roles
++
+--
+.FrontendResource.java
+[source,java]
+----
+@RolesAllowed("user")        <1>
+@GET
+@Path("/tokeninfo")
+@Produces(MediaType.TEXT_PLAIN)
+public String tokeninfo() {
+    String string = "Principal: " + principal.getName();
+    string += ",\n";
+
+    string += token.getClaimNames().stream().map(tok -> "\n " + tok + ": " + token.getClaim(tok))
+           .collect(Collectors.toList()).toString();
+
+    return string;
+}
+
+@RolesAllowed("superuser")    <2>
+// @Timeout
+@Timed(absolute = true, name = "getStudentsTime",
+       displayName = "FrontendResource getStudents() Time")
+@Retry(maxRetries = 4, delay = 1000)
+@CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5,
+            delay = 10000, successThreshold = 2)
+@Fallback(fallbackMethod = "getStudentsFallback")
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> getStudents() {
+    return student.listStudents();
+}
+----
+<1> Apply `@RolesAllowed("user")` to the getToken() method
+<2> Apply `@RolesAllowed("superuser")` to the getStudents() method
+--
+
+. Check the endpoints to validate access
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i http://localhost:8080/frontend/list
+----
+
+.Output
+....
+HTTP/1.1 401 Unauthorized
+www-authenticate: Bearer {token}
+Content-Length: 0
+....
+
+
+NOTE: Access is denied because the user is anonymous and there are no roles tied to the anonymous user. Note the HTTP response code is `401 Unauthorized`
+--
+
+. Retry the request using a token.
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw' http://localhost:8080/frontend/list
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 403 Forbidden
+Content-Length: 9
+Content-Type: application/json
+
+Forbidden
+....
+NOTE: This time access is denied because the demo user does not belong to the "superuser" group. The demo user belongs to the "user" and "admin" groups. Note the HTTP response code is `403 Forbidden`
+
+
+--
+
++
+// *********************************************
+
+. Change the "superuser" role to the "admin" role, which the "demo" user belongs to
++
+--
+.FrontendResource.java
+[source,java]
+----
+@RolesAllowed("admin")    <1>
+// @Timeout
+@Timed(absolute = true, name = "getStudentsTime",
+       displayName = "FrontendResource getStudents() Time")
+@Retry(maxRetries = 4, delay = 1000)
+@CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5,
+            delay = 10000, successThreshold = 2)
+@Fallback(fallbackMethod = "getStudentsFallback")
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> getStudents() {
+    return student.listStudents();
+}
+----
+<1> Change "superuser" to "admin"
+--
+
+. Check access with newly supplied "admin" role
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw' http://localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]
+....
+--
+
+=== Securing Student Service
+
+. Secure StudentResource.listStudents(), requiring the admin role
++
+--
+.StudentResource.java
+[source,java]
+----
+@RolesAllowed("admin")  <1>
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> listStudents() {
+    doDelay();
+    return students;
+}
+----
+<1> Change "superuser" to "admin"
+
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw' http://localhost:8080/frontend/list
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json
+
+["Smart Sam","Genius Gabby","A-Student Angie","Intelligent Irene"]
+....
+This implies that the request to the student service is not being managed properly because the fallback output is returned.
+--
+
+. The token needs to be forwarded to the student service. This requires annotating StudentRestClient with `@RegisterClientHeaders` and defining the headers to propagate (Authorization header) using the `org.eclipse.microprofile.rest.client.propagateHeaders` property.
++
+--
+.StudentRestClient.java
+[source,java]
+----
+@RegisterClientHeaders    <1>
+@RegisterRestClient(configKey = "StudentService")
+@Path("/student")
+public interface StudentRestClient {
+----
+<1> Add `@RegisterClientHeaders` to frontend application.properties
+
+.frontend/src/main/resource/application.properties
+[source,properties]
+----
+org.eclipse.microprofile.rest.client.propagateHeaders=Authorization<1>
+
+mp.jwt.verify.issuer=airhacks
+mp.jwt.verify.publickey=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtBR6TwVxolT5E2emnQEwqJztmeWRThU4ZA3V9+4vjOXoNmSKWrLfqLaKuMric9opYQi86yO1o0qChkAnlRY7ZytcaFqcehYOSAhcghYNn4Wzi70D2lJHj/YflFKdssySyNzqMIBMxNWZWx8kIVDRrVamsmF2Fo4Dg72ce8KiMSlqkWrHiSbfWpa2aQru9dEhErJPf05fGzQWwtvOvtLCp/tLXq7GmTE2XJJdiCk3CdE3OP/FQRWyeRtHk6Uq4hjzXTX6Wnrb7xDZCjQubfWYq9yoINet1eMFWFUXRsAJQbMJKIstcCvwmO35iPjFrftWTADOh3pzIARVqWwupDN7fwIDAQAB
+----
+// Note that it is important to not have spaces before property text <> labels!!!!!
+<1> Add this line to propagate the Authorization header. Additional headers can be propagated as well, separated by commas.
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke"," John"," Jane"," Arun"," Christina"]
+....
+
+The token (Authorization header) has been successfull propagated.
+--
+
+== Packaging, deploying, and monitoring
+
+Build applications as a thin jar files, package them as docker files and start them. Once running, view health endpoint state and view application metrics in grafana.
+
+. Update student URI for docker deployment.
++
+--
+.frontend/src/main/java/org/acme/application.properties
+[source,properties]
+----
+#StudentService/mp-rest/uri=http://localhost:8081 <1>
+%dev.StudentService/mp-rest/uri=http://localhost:8081 <2>
+%prod.StudentService/mp-rest/uri=http://student:8081 <3>
+----
+<1> Comment out current uri
+<2> Properties prefixed with `%dev.` will be used while in development mode only (`mvn quarkus:dev`). 
+<3> Properties prefixed with `%prod.` will be used when not running in native mode or with `java -jar` only. When running via the docker-compose, the host will be "student".
+
+NOTE: Quarkus supports multiple configuration profiles.  There is also a `%test.` profile when running tests. Properties with no profile defined are always utilized, as has been the case so far in this lab.
+--
+
+. Package applications as docker files
++
+--
+
+WARNING: Make sure docker daemon is running and is accessible (ex: `docker info` shows proper results)
+
+.Package student as thin jar and create a docker image
+
+[source,bash]
+----
+$ cd $PROJ_BASEDIR/student
+$ mvn clean package
+$ docker build -t acme/student:1.0 -f src/main/docker/Dockerfile.jvm .
+----
+
+.Package frontend as thin jar and create a docker image
+----
+$ cd $PROJ_BASEDIR/frontend
+$ mvn clean package
+$ docker build -t acme/frontend:1.0 -f src/main/docker/Dockerfile.jvm .
+----
+--
++
+
+// *********************************************
+
+. Stop student and frontend apps running in development mode to avoid port conflicts
++
+--
+.Terminal 1
+[source/bash]
+----
+# Press CTRL-C to stop Quarkus (student)
+----
+
+.Terminal 2
+[source/bash]
+----
+# Press CTRL-C to stop Quarkus (frontend)
+----
+--
++
+
+// *********************************************
+
+. Start student, frontend, prometheus, and grafana.
++
+--
+.Terminal 1
+[source,bash]
+----
+$ cd $PROJ_BASEDIR/docker
+$ docker-compose up
+----
+--
++
+
+// *********************************************
+
+. View student service health
++
+--
+
+.Terminal 2
+----
+$ docker-compose ps
+----
+.Terminal 2 Output
+....
+    Name           Command          State           Ports    
+-------------------------------------------------------------
+docker_fronte   /deployments/   Up              0.0.0.0:8080-
+nd_1            run-java.sh                     >8080/tcp,   
+                                                8778/tcp,    
+                                                9779/tcp     
+docker_grafan   /run.sh         Up              0.0.0.0:3000-
+a_1                                             >3000/tcp    
+docker_prom_1   /bin/promethe   Up              0.0.0.0:9090-
+                us --config.f                   >9090/tcp    
+docker_studen   /deployments/   Up              8080/tcp, 0.0
+t_1             run-java.sh     (unhealthy)     .0.0:8081->80 <1>
+                                                81/tcp,      
+                                                8778/tcp,    
+                                                9779/tcp   
+....
+
+<1> Run `docker-compose ps` until both `(healthy)` and `(unhealthy)` are displayed. In container orchestration environment, these pods containers would be restarted.
+--
++
+
+// *********************************************
+
+. Get Prometheus IP address
++
+--
+.Terminal 2
+[source, bash]
+----
+$ docker inspect docker_prom_1
+----
+
+.Terminal 2 Output
+....
+...
+...
+        "NetworkSettings": {
+            "Bridge": "",
+            "SandboxID": "acf7dc6b9591f7992fb3053639a38cc98f91281e98582b8a8a420026506d88b8",
+            "HairpinMode": false,
+            "LinkLocalIPv6Address": "",
+            "LinkLocalIPv6PrefixLen": 0,
+            "Ports": {
+                "9090/tcp": [
+                    {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "9090"
+                    }
+                ]
+            },
+            "SandboxKey": "/var/run/docker/netns/acf7dc6b9591",
+            "SecondaryIPAddresses": null,
+            "SecondaryIPv6Addresses": null,
+            "EndpointID": "",
+            "Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "IPAddress": "",
+            "IPPrefixLen": 0,
+            "IPv6Gateway": "",
+            "MacAddress": "",
+            "Networks": {
+                "docker_default": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "prom",
+                        "ea79e602a5e5"
+                    ],
+                    "NetworkID": "b4e117d0c94abe2a49a94164883405a8140acca16a1bc376f865b0dca5b839cc",
+                    "EndpointID": "bd1307800d42bb303d79d2ac8cf7bf856d84c8b84d7d4077b112822c8fb711e6",
+                    "Gateway": "172.18.0.1",
+                    "IPAddress": "172.18.0.4", <1>
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "02:42:ac:12:00:04",
+                    "DriverOpts": null
+                }
+            }
+        }
+    }
+]
+...
+...
+....
+<1> IP address iis 172.18.0.4. IP address may vary.
+
+NOTE: `docker inspect docker_prom_1 | grep IPAddress` should also make the IP address quickly apparent.
+--
+
+. Log in to Grafana
+.. Point browser to http://localhost:3000/login.
+
++
+--
+.user:admin, password:admin
+image::images/Grafana_Login.png[Grafana-Login,400,300]
+--
+
+. Add a data source
++
+.Click "Add datasource`
+image::images/Click_add_Datasource.png[Add-Datasource,600,300]
+
+. Filter and select Prometheus
++
+.Filter by Prometheus and click Prometheus
+image::images/Filter-Prometheus.png[Filter Prometheus,500,300]
+
+. Configure Prometheus Data Source
++
+.Configure URL using IP Address and save & test it
+image::images/Configure_Datasource.png[Configure Datasource,400,300]
+
+. Import JSON File
++
+.Import JSON File
+image::images/Import_Json_File.png[Grafana-Login,400,300]
+
+. Select Dashboard - $PROJ_BASEDIR/docker/grafana-frontend-dashboard.json
++
+.Select 
+image::images/Select_Dashboard.png[Grafana-Login,400,300]
+
+
+. Generate load by running curl a random number of times
++
+--
+.Terminal 2
+----
+$ curl -i localhost:8080/student/list
+$ curl -i localhost:8080/student/list
+$ curl -i localhost:8080/student/list
+$ curl -i localhost:8080/student/list
+$ curl -i localhost:8080/student/list
+----
+--
+
+. Stop the student service
++
+--
+.Terminal 2
+----
+$ docker-compose stop student
+----
+--
+
+. Generate load by running curl a random number of times with the circuit breaker in an open state.
++
+--
+.Terminal 2
+----
+$ curl -i localhost:8080/student/list
+$ curl -i localhost:8080/student/list
+----
+--
+
+. View the Grafana dashboard
++
+.View Grafana Dashboard 
+image::images/Display_Dashboard.png[Grafana-Refresh,600,450]
++
+--
+Some interesting notes on the dashboard:
+
+* During metrics gathering, the goal was to stop and start the student service to force some circuit breaker time in the half-open state (yellow line in lower-right hand graph). Relative to the other states, a small amount of time is  spent in half-open state (due to small window [`requestVolumeThreshold`] and small `successThreshold`).
+* Because of time spent with the student service stopped, there is growth in fallback calls
+* The lower-left hand graph uses the MicroProfile Metrics default metric name being graphed. The other graphs uses custom names defined in the dashboard itself
+* The proportionally large mean time spent in `listStudents()` (roughly 10 seconds) is due to the number or retries combined with the delay between requests - `@Retry(maxRetries = 4, delay = 1000)`
+* While not implemented in this tutorial, these metrics could easily be business-oriented metrics, like 'show the average number of students retrieved per course' to display a live statistic related to class size.
+--
