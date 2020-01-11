@@ -2271,13 +2271,13 @@ NOTE: `docker inspect docker_prom_1 | grep IPAddress` should also make the IP ad
 +
 --
 .user:admin, password:admin
-image::images/Grafana_Login.png[Grafana-Login,400,300]
+image::images/Grafana_Login.png[Grafana-Login,400,250]
 --
 
 . Add a data source
 +
 .Click "Add datasource`
-image::images/Click_add_Datasource.png[Add-Datasource,600,300]
+image::images/Click_add_Datasource.png[Add-Datasource,600,100]
 
 . Filter and select Prometheus
 +
