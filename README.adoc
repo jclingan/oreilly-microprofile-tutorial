@@ -3,7 +3,7 @@
 == Introduction
 
 
-This tutorial shows, in a https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on/docs[hands-on, step-by-step manner], how to develop an application using a significant portion of the MicroProfile core specifications, including MicroProfile Config, Rest Client, Fault Tolerance, Metrics, Health, and JWT RBAC. This tutorial assumes some familiarity with JAX-RS and CDI, although having experience with Spring DI and Spring MVC is likely sufficient.
+This tutorial shows, in a https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on/tree/master/docs[hands-on, step-by-step manner], how to develop an application using a significant portion of the MicroProfile core specifications, including MicroProfile Config, Rest Client, Fault Tolerance, Metrics, Health, and JWT RBAC. This tutorial assumes some familiarity with JAX-RS and CDI, although having experience with Spring DI and Spring MVC is likely sufficient.
 
 NOTE: This hands-on tutorial accompanies an https://learning.oreilly.com/live-training/[O'Reilly Live training] on https://learning.oreilly.com/live-training/courses/developing-microservices-with-eclipse-microprofile/0636920360094/[Developing Microservices with Eclipse MicroProfile], but can also be used as a standalone tutorial. If you have an O'Reilly subscription that supports the training, feel free to sign up!
 
