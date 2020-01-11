@@ -1,0 +1,362 @@
+== MicroProfile JWT RBAC
+
+This section will secure the student service and frontend service endpoints, and propagate a bearer token across services.
+
+NOTE: A token has already been generated using a supplied build of Adam Bien's https://github.com/AdamBien/jwtenizr[jwtenizr]. In addition, to facilitate these instructions, the token will last until 2120 :-)
+
+Because tokens are base64 encoded, they can be easily decoded. jwt.io can display jwt tokens and verify them using the issuer's public key.  https://jwt.io/#debugger-io?token=eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw&publicKey=-----BEGIN%20PUBLIC%20KEY-----%0AMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtBR6TwVxolT5E2emnQEwqJztmeWRThU4ZA3V9%2B4vjOXoNmSKWrLfqLaKuMric9opYQi86yO1o0qChkAnlRY7ZytcaFqcehYOSAhcghYNn4Wzi70D2lJHj%2FYflFKdssySyNzqMIBMxNWZWx8kIVDRrVamsmF2Fo4Dg72ce8KiMSlqkWrHiSbfWpa2aQru9dEhErJPf05fGzQWwtvOvtLCp%2FtLXq7GmTE2XJJdiCk3CdE3OP%2FFQRWyeRtHk6Uq4hjzXTX6Wnrb7xDZCjQubfWYq9yoINet1eMFWFUXRsAJQbMJKIstcCvwmO35iPjFrftWTADOh3pzIARVqWwupDN7fwIDAQAB%0A-----END%20PUBLIC%20KEY-----[(Click here)] to see the token used in this course.
+
+// *********************************************
+
+. Add the MicroProfile dependency to *both the student service and frontend service* pom.xml files.
++
+--
+.pom.xml
+[source,xml]
+----
+<dependency> <1>
+    <groupId>io.quarkus</groupId>
+    <artifactId>quarkus-smallrye-jwt</artifactId>
+</dependency>
+----
+<1> Add this
+--
+
+. Add required MicroProfile JWT RBAC properties to *both the student service and frontend service* application.property files.
++
+--
+.application.properties
+[source,property]
+----
+mp.jwt.verify.issuer=airhacks
+mp.jwt.verify.publickey=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtBR6TwVxolT5E2emnQEwqJztmeWRThU4ZA3V9+4vjOXoNmSKWrLfqLaKuMric9opYQi86yO1o0qChkAnlRY7ZytcaFqcehYOSAhcghYNn4Wzi70D2lJHj/YflFKdssySyNzqMIBMxNWZWx8kIVDRrVamsmF2Fo4Dg72ce8KiMSlqkWrHiSbfWpa2aQru9dEhErJPf05fGzQWwtvOvtLCp/tLXq7GmTE2XJJdiCk3CdE3OP/FQRWyeRtHk6Uq4hjzXTX6Wnrb7xDZCjQubfWYq9yoINet1eMFWFUXRsAJQbMJKIstcCvwmO35iPjFrftWTADOh3pzIARVqWwupDN7fwIDAQAB
+----
+--
+
+=== Securing Frontend Service
+
+. Create a new endpoint in FrontendResource.java to display the Principal
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Inject
+Principal principal;
+
+@GET
+@Path("/tokeninfo")
+@Produces(MediaType.TEXT_PLAIN)
+public String tokeninfo() {
+    String string = "Principal: " + principal.getName();
+    return string;
+}
+----
+--
+
+. Check endpoint, which should return 'null' since no principal has been supplied
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/tokeninfo
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 15
+Content-Type: text/plain;charset=UTF-8
+
+Principal: null
+....
+--
++
+
+// *********************************************
+
+. Re-run the command, this time supplying the token:
++
+--
+
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw'  http://localhost:8080/frontend/tokeninfo
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 15
+Content-Type: text/plain;charset=UTF-8
+
+Principal: demo
+....
+--
++
+
+// *********************************************
+
+. Update "/tokeninfo" endpoint to display  all claims
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Inject
+JsonWebToken token; <1>
+
+@GET
+@Path("/tokeninfo")
+@Produces(MediaType.TEXT_PLAIN)
+public String tokenInfo() { <2>
+    String string = "Principal: " + principal.getName();
+
+    string += ",\n";
+
+    string += token.getClaimNames()
+        .stream()
+        .map(tok -> "\n " + tok + ": " + token.getClaim(tok))
+        .collect(Collectors.toList())
+        .toString();
+
+    return string;
+}
+----
+<1> Inject the token
+<2> Replace the contents of tokenInfo
+--
++
+. Check the token output
+
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw'  http://localhost:8080/frontend/tokeninfo
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 816
+Content-Type: text/plain;charset=UTF-8
+
+Principal: demo,
+[
+ sub: demo, 
+ upn: demo, 
+ myc: My Custom Claim, 
+ raw_token: eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw, 
+ auth_time: 1578015200, 
+ iss: airhacks, 
+ groups: [admin, user], 
+ exp: 3155882898, 
+ iat: 1578015200, 
+ jti: 42]
+....
+--
++
+
+// *********************************************
+
+.  Secure endpoints by limiting access to specified roles
++
+--
+.FrontendResource.java
+[source,java]
+----
+@RolesAllowed("user")        <1>
+@GET
+@Path("/tokeninfo")
+@Produces(MediaType.TEXT_PLAIN)
+public String tokeninfo() {
+    String string = "Principal: " + principal.getName();
+    string += ",\n";
+
+    string += token.getClaimNames().stream().map(tok -> "\n " + tok + ": " + token.getClaim(tok))
+           .collect(Collectors.toList()).toString();
+
+    return string;
+}
+
+@RolesAllowed("superuser")    <2>
+// @Timeout
+@Timed(absolute = true, name = "getStudentsTime",
+       displayName = "FrontendResource getStudents() Time")
+@Retry(maxRetries = 4, delay = 1000)
+@CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5,
+            delay = 10000, successThreshold = 2)
+@Fallback(fallbackMethod = "getStudentsFallback")
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> getStudents() {
+    return student.listStudents();
+}
+----
+<1> Apply `@RolesAllowed("user")` to the getToken() method
+<2> Apply `@RolesAllowed("superuser")` to the getStudents() method
+--
+
+. Check the endpoints to validate access
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i http://localhost:8080/frontend/list
+----
+
+.Output
+....
+HTTP/1.1 401 Unauthorized
+www-authenticate: Bearer {token}
+Content-Length: 0
+....
+
+
+NOTE: Access is denied because the user is anonymous and there are no roles tied to the anonymous user. Note the HTTP response code is `401 Unauthorized`
+--
+
+. Retry the request using a token.
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw' http://localhost:8080/frontend/list
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 403 Forbidden
+Content-Length: 9
+Content-Type: application/json
+
+Forbidden
+....
+NOTE: This time access is denied because the demo user does not belong to the "superuser" group. The demo user belongs to the "user" and "admin" groups. Note the HTTP response code is `403 Forbidden`
+
+
+--
+
++
+// *********************************************
+
+. Change the "superuser" role to the "admin" role, which the "demo" user belongs to
++
+--
+.FrontendResource.java
+[source,java]
+----
+@RolesAllowed("admin")    <1>
+// @Timeout
+@Timed(absolute = true, name = "getStudentsTime",
+       displayName = "FrontendResource getStudents() Time")
+@Retry(maxRetries = 4, delay = 1000)
+@CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5,
+            delay = 10000, successThreshold = 2)
+@Fallback(fallbackMethod = "getStudentsFallback")
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> getStudents() {
+    return student.listStudents();
+}
+----
+<1> Change "superuser" to "admin"
+--
+
+. Check access with newly supplied "admin" role
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw' http://localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]
+....
+--
+
+=== Securing Student Service
+
+. Secure StudentResource.listStudents(), requiring the admin role
++
+--
+.StudentResource.java
+[source,java]
+----
+@RolesAllowed("admin")  <1>
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> listStudents() {
+    doDelay();
+    return students;
+}
+----
+<1> Change "superuser" to "admin"
+
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw' http://localhost:8080/frontend/list
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json
+
+["Smart Sam","Genius Gabby","A-Student Angie","Intelligent Irene"]
+....
+This implies that the request to the student service is not being managed properly because the fallback output is returned.
+--
+
+. The token needs to be forwarded to the student service. This requires annotating StudentRestClient with `@RegisterClientHeaders` and defining the headers to propagate (Authorization header) using the `org.eclipse.microprofile.rest.client.propagateHeaders` property.
++
+--
+.StudentRestClient.java
+[source,java]
+----
+@RegisterClientHeaders    <1>
+@RegisterRestClient(configKey = "StudentService")
+@Path("/student")
+public interface StudentRestClient {
+----
+<1> Add `@RegisterClientHeaders` to frontend application.properties
+
+.frontend/src/main/resource/application.properties
+[source,properties]
+----
+org.eclipse.microprofile.rest.client.propagateHeaders=Authorization<1>
+
+mp.jwt.verify.issuer=airhacks
+mp.jwt.verify.publickey=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtBR6TwVxolT5E2emnQEwqJztmeWRThU4ZA3V9+4vjOXoNmSKWrLfqLaKuMric9opYQi86yO1o0qChkAnlRY7ZytcaFqcehYOSAhcghYNn4Wzi70D2lJHj/YflFKdssySyNzqMIBMxNWZWx8kIVDRrVamsmF2Fo4Dg72ce8KiMSlqkWrHiSbfWpa2aQru9dEhErJPf05fGzQWwtvOvtLCp/tLXq7GmTE2XJJdiCk3CdE3OP/FQRWyeRtHk6Uq4hjzXTX6Wnrb7xDZCjQubfWYq9yoINet1eMFWFUXRsAJQbMJKIstcCvwmO35iPjFrftWTADOh3pzIARVqWwupDN7fwIDAQAB
+----
+// Note that it is important to not have spaces before property text <> labels!!!!!
+<1> Add this line to propagate the Authorization header. Additional headers can be propagated as well, separated by commas.
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke"," John"," Jane"," Arun"," Christina"]
+....
+
+The token (Authorization header) has been successfull propagated.
+--

@@ -1,0 +1,104 @@
+== MicroProfile Health
+
+This section will create an endpoint that exposes the health of the student service. The logic will result in the student service being healthy 50% of the time. This will be checked using a CLI, but in the packaging section will be checked using a docker-compose healthcheck.
+
+. Verify default health check endpoint
++
+--
+.Terminal 3
+....
+$ curl -i localhost:8081/health
+....
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+content-type: application/json; charset=UTF-8
+content-length: 46
+
+
+{
+    "status": "UP",
+    "checks": [
+    ]
+}
+....
+--
++
+
+// *********************************************
+
+. Create a MicroProfile Health Endpoint
++
+--
+.student/src/main/java/org/acme/StudentHealth.java
+[source,java]
+----
+package org.acme;
+
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Liveness;
+import org.eclipse.microprofile.health.Readiness;
+
+@Liveness  <1>
+@Readiness <2>
+public class StudentHealth implements HealthCheck {
+    @Override
+    public HealthCheckResponse call() {
+        double random = Math.random();
+        return HealthCheckResponse
+            .named("UnstableServiceCheck")         <3>
+            .state(random < .50 ? true : false)    <4>
+            .withData("randomNumber", "" + random) <5>
+            .build();
+    }
+}
+----
+<1> Restart unrecoverable service
+<2> Pause traffic until ready
+<3> A healthcheck can be named
+<4> State is UP (true) or DOWN (false)
+<5> Data can be added to provide state context
+
+NOTE: Retry a few times until both UP and DOWN have been displayed across subsequent requests. If here is more than one health check class in an application, then all must be UP for overall state to be UP.
+
+NOTE: Typically there would be a separate health check class for readiness and liveness, but shown here in a single class for "conciseness" under time constraints. 
+--
++
+
+// *********************************************
+
+. Check health liveness endpoint specifically
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/health/live
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 503 Service Unavailable  <1>
+content-type: application/json; charset=UTF-8
+content-length: 231
+
+
+{
+    "status": "DOWN",
+    "checks": [
+        {
+            "name": "UnstableServiceCheck",
+            "status": "DOWN",
+            "data": {
+                "randomNumber": "0.60806403626233085"
+            }
+        }
+    ]
+}
+....
+<1> The HTTP Reponse code will be 503 when a service is down
+
+NOTE: There is a /health/ready endpoint as well
+--

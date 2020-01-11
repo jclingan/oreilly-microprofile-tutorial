@@ -1,0 +1,190 @@
+== Create Student Service
+
+Create a simple Quarkus project as a starting point - the "student" service. A default RESTful endpoint is generated. While this workshop utilizes the mvn command line tooling, projects can also be generated at http://code.quarkus.io[code.quarkus.io] using a Web UI.
+
+. Go to the project's base directory and create project using maven
++
+--
+
+.Terminal 1
+[source,bash]
+----
+# In each terminal, set PROJ_BASEDIR, the project top-level-directory,
+#   to somewhere on your local drive
+$ export PROJ_BASEDIR=<path-to-your project>
+$ mkdir $PROJ_BASEDIR
+$ cd $PROJ_BASEDIR
+$ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
+    -DprojectGroupId=org.acme \
+    -DprojectArtifactId=student \
+    -DclassName="org.acme.StudentResource" \
+    -Dpath="/student" \
+    -Dextensions="resteasy-jsonb,smallrye-health"
+----
+--
+
+. Optional: To see a list of available extensions, type:
+
++
+--
+
+.Terminal 1
+[source,bash]
+----
+$ mvn quarkus:list-extensions
+----
+--
+
+. Open project in your favorite IDE
+.. Open StudentResource.java and peruse the JAX-RS source code
+
++
+--
+.StudentResource.java
+[source,java]
+----
+package org.acme;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+@Path("/student")
+public class StudentResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return "hello";
+    }
+}
+----
+--
+
++
+NOTE: The generated project does not include a JAX-RS Application class. Quarkus will provide a default JAX-RS Application class if one is not provided by the developer. In addition, a single instance of a RESTful resource is created by default. These are non-portable developer convenience features. These points are covered in the https://quarkus.io/guides/getting-started#the-jax-rs-resources[Quarkus Getting Started Guide].
+
+. Start Quarkus in developer mode
+
++
+--
+.Terminal 1
+[source,bash]
+----
+$ mvn quarkus:dev
+----
+--
++
+
+// ***********************************************
+
+. Check that the endpoint returns "hello"
+
++
+--
+.Terminal 2
+[source,bash]
+----
+$ curl -i localhost:8080/student
+----
+.Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+hello
+....
+--
++
+
+// ***********************************************
+
+. Experience live reload. In the StudentResource.java hello() method, replace "Hello" with "Howdy" and save the file
++
+.StudentResource.java
+[source,java]
+----
+public class StudentResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello() {
+        return "Howdy"; <1>
+    }
+}
+----
+<1> Replace "Hello" with "Howdy"
+
++
+
+.Terminal 2
+[source,bash]
+----
+$ curl -i localhost:8080/student
+----
++
+.Terminal 2 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+Howdy
+....
+
++
+
+// *********************************************
+
+. In StudentResource.java, create a list of Strings:
++
+--
+.StudentResource.java
+[source,java]
+----
+@Path("/student")
+public class StudentResource {
+    List<String> students = new ArrayList<>(); <1>
+----
+<1> Add this line
+--
+
+. Add a method called listStudents at the "/list" path that returns the students as a JSON array
++
+--
+.StudentResource.java
+[source,java]
+----
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> listStudents() {
+    return students;
+}
+----
+--
+
+. Check the output
++
+.Terminal 2
+--
+[source,bash]
+----
+$ curl -i localhost:8080/student/list
+----
+--
+
++
+--
+
+.Terminal 2 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+--

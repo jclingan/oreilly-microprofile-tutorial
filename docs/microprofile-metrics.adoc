@@ -1,0 +1,246 @@
+== MicroProfile Metrics
+
+This section will cover business and performance metrics that will be graphed in Prometheus and Grafana in the packaging section.
+
+. View all default metrics (in Prometheus/OpenMetrics format)
++
+--
+.Terminal 3
+[source, bash]
+----
+$ curl -i http://localhost:8080/metrics
+----
+--
+
+. View base metrics (in JSON this time)
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H "Accept: application/json" \
+http://localhost:8080/metrics/base
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, HEAD
+Access-Control-Max-Age: 1209600
+Access-Control-Allow-Headers: origin, content-type, accept, authorization
+Content-Type: application/json
+content-length: 630
+
+
+{
+    "gc.total;name=PS MarkSweep": 2,
+    "cpu.systemLoadAverage": 2.1572265625,
+    "thread.count": 78,
+    "classloader.loadedClasses.count": 8145,
+    "classloader.unloadedClasses.total": 26,
+    "gc.total;name=PS Scavenge": 7,
+    "gc.time;name=PS MarkSweep": 75,
+    "jvm.uptime": 6725918,
+    "thread.max.count": 158,
+    "memory.committedHeap": 879230976,
+    "classloader.loadedClasses.total": 8171,
+    "cpu.availableProcessors": 12,
+    "gc.time;name=PS Scavenge": 72,
+    "thread.daemon.count": 12,
+    "memory.maxHeap": 7635730432,
+    "cpu.processCpuLoad": 0.00015370844246171116,
+    "memory.usedHeap": 102588008
+}
+....
+--
++
+
+// *********************************************
+
+. View vendor-specific (Quarkus) metrics (in JSON)
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H "Accept: application/json" \
+http://localhost:8080/metrics/vendor
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, HEAD
+Access-Control-Max-Age: 1209600
+Access-Control-Allow-Headers: origin, content-type, accept, authorization
+Content-Type: application/json
+content-length: 933
+
+
+{
+    "memory.freePhysicalSize": 185147392,
+    "memoryPool.usage;name=Metaspace": 41917128,
+    "memoryPool.usage.max;name=PS Eden Space": 534773760,
+    "memoryPool.usage;name=PS Eden Space": 0,
+    "memoryPool.usage.max;name=PS Old Gen": 26178520,
+    "memoryPool.usage;name=PS Old Gen": 26162136,
+    "cpu.processCpuTime": 23883246000,
+    "memory.committedNonHeap": 62717952,
+    "memoryPool.usage.max;name=PS Survivor Space": 22014064,
+    "memoryPool.usage.max;name=Compressed Class Space": 5191952,
+    "memoryPool.usage;name=Code Cache": 12367808,
+    "memory.freeSwapSize": 185192448,
+    "memoryPool.usage.max;name=Metaspace": 41909544,
+    "cpu.systemCpuLoad": 0.059001660401582626,
+    "memoryPool.usage.max;name=Code Cache": 12367808,
+    "memory.usedNonHeap": 59479424,
+    "memoryPool.usage;name=PS Survivor Space": 20868400,
+    "memoryPool.usage;name=Compressed Class Space": 5193208,
+    "memory.maxNonHeap": -1
+}
+....
+--
++
+
+// *********************************************
+
+. View application metrics (in JSON)
++
+
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -H "Accept: application/json" \
+http://localhost:8080/metrics/application
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS, HEAD
+Access-Control-Max-Age: 1209600
+Access-Control-Allow-Headers: origin, content-type, accept, authorization
+Content-Type: application/json
+content-length: 1162
+
+
+{
+    "ft.org.acme.FrontendResource.listStudents.circuitbreaker.closed.total": 229004662188,
+    "ft.org.acme.FrontendResource.listStudents.circuitbreaker.callsFailed.total": 4,
+    "ft.org.acme.FrontendResource.listStudents.retry.callsSucceededNotRetried.total": 5,
+    "ft.org.acme.FrontendResource.listStudents.invocations.total": 9,
+    "ft.org.acme.FrontendResource.listStudents.circuitbreaker.open.total": 138015497877,
+    "ft.org.acme.FrontendResource.listStudents.retry.callsFailed.total": 4,
+    "ft.org.acme.FrontendResource.listStudents.retry.retries.total": 16,
+...
+...
+...
+....
+--
++
+
+// *********************************************
+
+. Add @Counted to FrontendResource, counting invocations for each method
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Counted     <1>
+@Path("/frontend")
+public class FrontendResource {
+
+    @Inject
+    @RestClient
+    StudentRestClient student;
+// ...
+----
+<1> Add @Counted annotation
+--
++
+
+// *********************************************
+
+. Time getStudents() method duration
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Timed(absolute = true,                                      <1>
+       name = "listStudentsTime",                            <2>
+       displayName = "FrontendResource.listStudents()")      <3>
+@Retry(maxRetries = 4,delay = 1000)
+@CircuitBreaker(
+    requestVolumeThreshold = 4,
+    failureRatio = 0.5, 
+    delay = 10000,
+    successThreshold = 2)
+@Fallback(fallbackMethod = "getStudentsFallback")
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> getStudents() {
+    return student.listStudents();
+}
+----
+<1> *absolute* Remove package name. Metric uses name parameter if it exists, if not it uses the name of the class or method.
+<2> *name* Metric name (custom name)
+<3> *displayName* Human-readable name
+--
+
+. View Count metrics
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -s localhost:8080/metrics/application | grep -i count | grep -v TYPE
+----
+.Terminal 3 Output
+....
+application_listStudentsTime_rate_per_second 0.0064179960596986016
+application_listStudentsTime_one_min_rate_per_second 2.289677245305126E-5
+application_listStudentsTime_five_min_rate_per_second 0.0027034834474565605
+application_listStudentsTime_fifteen_min_rate_per_second 0.0026109713997948688
+application_listStudentsTime_min_seconds 0.712298109
+application_listStudentsTime_max_seconds 1.963374472
+application_listStudentsTime_mean_seconds 1.4476512202320395
+application_listStudentsTime_stddev_seconds 0.5326369162743406
+application_listStudentsTime_seconds_count 4.0
+application_listStudentsTime_seconds{quantile="0.5"} 1.91465394
+application_listStudentsTime_seconds{quantile="0.75"} 1.963374472
+application_listStudentsTime_seconds{quantile="0.95"} 1.963374472
+application_listStudentsTime_seconds{quantile="0.98"} 1.963374472
+application_listStudentsTime_seconds{quantile="0.99"} 1.963374472
+application_listStudentsTime_seconds{quantile="0.999"} 1.963374472
+....
+--
++
+
+// *********************************************
+
+. View Timed metrics
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/metrics/application | grep -i time | grep -v TYPE
+----
+.Terminal 3 Output
+....
+application_FrontendResourceCounter_listStudentsFallback_total 0.0
+application_FrontendResourceCounter_FrontendResource_total 1.0
+application_FrontendResourceCounter_hello_total 3.0
+application_FrontendResourceCounter_listStudents_total 4.0
+application_listStudentsTime_seconds_count 4.0
+....
+--
+
+NOTE: Notice some metrics have curly braces around them "{}". These are metric tags that subset a metric. See the https://github.com/jclingan/microprofile-quarkus-metrics-tags[metrics-tags example] to see metric tags in action.

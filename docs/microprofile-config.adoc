@@ -1,0 +1,431 @@
+== MicroProfile Config
+
+This section covers the MicroProfile CDI injection-based API for externalizing configuration. In these instructions, configuration parameters are stored in src/main/resources/application.properties.
+
+NOTE: The instructor uses https://code.visualstudio.com/[Visual Studio Code]. While Quarkus supports the MicroProfile standard src/main/resources/META-INF/microprofile-config.properties file, the Quarkus Visual Studio code plugin https://github.com/redhat-developer/vscode-quarkus/issues/181[does not yet] support code completion and syntax highlighting of microprofile-config.properties. As a result, this workshop uses application.properties.
+
+. Create doDelay() method to delay 3000 milliseconds and print "Waiting 3000 milliseconds" to stdout.
++
+--
+.StudentResource.java
+[source,java]
+----
+void doDelay() {
+    int delayTime;
+    try {
+        delayTime=3000;
+        System.out.println("** Waiting " + delayTime + "ms **");
+        TimeUnit.MILLISECONDS.sleep(delayTime);
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+}
+----
+--
+
+. In listStudents(), call doDelay()
++
+--
+.StudentResource.java
+[source,java]
+----
+@GET
+@Path("/list")
+@Produces(MediaType.APPLICATION_JSON)
+public List<String> listStudents() {
+    doDelay(); // <1>
+    return students;
+}
+----
+<1> Insert `doDelay()` call
+
+--
+. Check the endpoint, which should take longer to complete
++
+--
+.Terminal 2
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 3 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output (after 3 seconds)
+....
+** Waiting 3000ms ** <1>
+....
+
+<1> Output from doDelay()
+--
++
+
+// *********************************************
+
+. Inject delay property value into variable delay
++
+--
+.StudentResource.java
+[source,java]
+----
+@Inject
+@ConfigProperty(name="delay")
+int delay;
+----
+--
+. In doDelay(), replace hard-coded "3000" with the delay variable
++
+--
+.StudentResource.java
+[source,java]
+----
+void doDelay() {
+    int delayTime;
+    try {
+        delayTime=delay;  // <1>
+        System.out.println("** Waiting " + delayTime + "ms **");
+        TimeUnit.MILLISECONDS.sleep(delayTime);
+    } catch (InterruptedException e) {
+        e.printStackTrace();
+    }
+}
+----
+<1> Replace `3000` with `delay`, as shown
+--
+
+. Verify an error is generated because the delay property has not been defined.
++
+--
+.Terminal 2
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+
+.Terminal 2 Output (Stack Trace)
+....
+Caused by: javax.enterprise.inject.spi.DeploymentException: No config value of type [int] exists for: delay
+....
+--
++
+
+// *********************************************
+
+. Define `delay` property in src/main/resources/application.properties:
++
+--
+.application.properties
+[source, property]
+----
+# Configuration file
+# key = value
+
+delay=2500 <1>  
+----
+<1> Add this line
+--
+
+. Verify property is read. Also notice that live reload works with property file changes.
++
+--
+.Terminal 2
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 2.5 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2500ms **
+....
+--
++
+
+// *********************************************
+
+
+. Update @ConfigProperty annotation with a default value of 2000.
++
+--
+.StudentResource.java
+[source,java]
+----
+@Inject
+@ConfigProperty(name="delay", defaultValue="2000") <1>
+int delay;
+----
+<1> Insert `, defaultValue=2000`
+--
+
+. Verify defaultValue is read.
++
+--
+.Terminal 2
+[source,bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 2 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+
+// *********************************************
+
+
+. Stop running Quarkus process.
++
+--
+.Terminal 1
+[source, bash]
+----
+# Press CTRL-C to stop Quarkus
+----
+--
++
+
+// *********************************************
+
+. Define `DELAY` environmental variable
++
+--
+.Terminal 1
+[source, bash]
+----
+export DELAY=4000
+----
+--
++
+
+// *********************************************
+
+. Restart Quarkus.
++
+--
+.Terminal 1
+[source,bash]
+----
+$ mvn quarkus:dev
+----
+--
++
+
+// *********************************************
+
+. Verify the `DELAY` environment variable overrides the value in the property file.
+
++
+--
+
+.Terminal 2
+[source,bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 4 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 4000ms **
+....
+--
++
+
+// *********************************************
+
+. Stop Quarkus
++
+--
+.Terminal 1
+[source, bash]
+----
+# Press CTRL-C to stop Quarkus
+----
+--
+
+. Re-start Quarkus and define system property via CLI.
++
+--
+.Terminal 1
+[source, bash]
+----
+$ mvn quarkus:dev -Ddelay=5000
+----
+--
++
+
+// *********************************************
+
+. Verify the `DELAY` system property overrides the value in the property file. In _Terminal 2_, type
++
+--
+.Terminal 2
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 5 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 5000ms **
+....
+--
++
+
+// *********************************************
+
+. Clean up by stopping Quarkus and unsetting DELAY environment variable
++
+--
+.Terminal 1
+[source, bash]
+----
+# *** First, press CTRL-C to stop Quarkus ***
+# Next, remove DELAY environment variable
+unset DELAY
+----
+--
++
+
+// *********************************************
+
+. Comment out `delay` since there is now a default value, and change the Quarkus HTTP port. Update application.proporties to look as follows:
++
+--
+.application.properties
+[source, property]
+----
+#delay=2000  // <1>
+quarkus.http.port=8081 // <2>
+----
+<1> Comment `delay` property, as shown
+<2> Insert `quarkus.http.port` property
+--
+. Restart Quarkus without defining `delay` system property and change debug port.
++
+--
+.Terminal 1
+[source, bash]
+----
+$ mvn quarkus:dev -Ddebug=5006
+----
+--
++
+
+// *********************************************
+
+. Verify updated properties.
++
+--
+.Terminal 2
+[source,property]
+----
+# Note the port change to 8081!
+$ curl -i http://localhost:8081/student/list
+----
+
+.Terminal 2 Output (after 2 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 2
+Content-Type: application/json
+
+[]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+
+// *********************************************
+
+. In MicroProfile Config, comma-separated properties can be read as a List. Add the following to application.properties  to initialize the student list:
++
+--
+.application.properties
+[source]
+----
+students=Duke,John,Jane,Arun,Christina
+----
+--
++
+
+// *********************************************
+
+. Inject students into student list. Change List<String> students to:
++
+--
+.StudentResource.java
+[source,java]
+-----
+@Inject
+@ConfigProperty(name = "students")
+List<String> students = new ArrayList<>();
+-----
+--
+
+. Verify that students have been injected.
++
+--
+.Terminal 1
+[source, bash]
+----
+$ curl -i http://localhost:8080/student/list
+----
+.Terminal 2 Output (after 2 seconds)
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--

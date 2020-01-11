@@ -1,0 +1,307 @@
+== MicroProfile Rest Client
+
+This section will create a "frontend" service that will utilize the type-safe MicroProfile Rest Client API to invoke the student service. Additional Quarkus extensions (aka maven dependencies) aree  also added to support upcoming sections well.
+
+. Create frontend project using mvn command line
++
+--
+.Terminal 2
+[source,bash]
+----
+$ cd $PROJ_BASEDIR
+$ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
+    -DprojectGroupId=org.acme \
+    -DprojectArtifactId=frontend \
+    -DclassName="org.acme.FrontendResource" \
+    -Dpath="/frontend" \
+    -Dextensions="resteasy-jsonb,metrics,rest-client,fault-tolerance"
+----
+--
++
+
+// *********************************************
+
+. Open frontend project in your IDE
++
+// *********************************************
+
+. Start frontend in Quarkus dev mode
++
+--
+.Terminal 2
+[source,bash]
+----
+$ mvn compile quarkus:dev
+----
+--
++
+
+// *********************************************
+
+
+. Create src/main/java/org/acme/StudentRestClient.java and paste in the following content
++
+--
+.frontend/src/main/java/org/acme/StudentRestClient.java
+[source,java]
+----
+package org.acme;
+
+import java.util.List;
+
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+
+import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
+
+@RegisterRestClient(baseUri = "http://localhost:8081")
+@Path("/student")
+public interface StudentRestClient {
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello();
+
+    @GET
+    @Path("/list")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> listStudents();
+}
+----
+--
++
+
+// *********************************************
+
+. Inject StudentRestClient into FrontendResource.java
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Inject
+@RestClient
+StudentRestClient student;
+----
+--
++
+
+// *********************************************
+
+. Change hello() method to invoke student service hello endpoint
++
+--
+.FrontendResource.java
+[source,java]
+----
+@GET
+@Produces(MediaType.TEXT_PLAIN)
+public String hello() {
+    return student.hello(); // <1>
+}
+----
+<1> Replace `"hello"` with `student.hello()`, as shown
+--
+
+. Check endpoint works properly
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+Howdy
+....
+--
++
+
+// *********************************************
+
+. Remove baseURI parameter from @RegisterRestClient so it can be configured using a property
++
+--
+.StudentRestClient.java
+[source,java]
+----
+@RegisterRestClient <1>
+----
+<1> Removed `(baseUri = "http://localhost:8081")`
+--
++
+
+// *********************************************
+
+. Configure rest client baseUri in application.properties
++
+--
+.frontend application.properties
+[source,properties]
+----
+org.acme.StudentService/mp-rest/uri=http://localhost:8081
+----
+--
+
+. Check endpoint
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend
+----
+
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+Howdy
+....
+--
++
+
+// *********************************************
+
+. Update @RegisterRestClient annotation to specify configKey in StudentRestClient.java
++
+--
+.StudentRestClient.java
+[source,java]
+----
+@RegisterRestClient(configKey = "StudentService")
+----
+--
++
+
+// *********************************************
+
+. Update the frontend application.properties to utilize the configKey
++
+--
+.frontend application.properties
+[source,properties]
+----
+StudentService/mp-rest/uri=http://localhost:8081
+----
+--
+
+. Check endpoint
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 5
+Content-Type: text/plain;charset=UTF-8
+
+Howdy
+....
+--
++
+
+// *********************************************
+
+. Add listStudents() method to FrontendResource.java.
++
+--
+.FrontendResource.java
+[source,java]
+----
+@GET
+@Produces(MediaType.APPLICATION_JSON)
+@Path("/list")
+public List<String> listStudents() {
+    return student.listStudents();
+}
+----
+--
++
+
+// *********************************************
+
+. Specify a StudentRestClient readTimeout in frontend application.properties that will throw an exception if read time threshold is exceeded
++
+--
+.frontend application.properties
+[source,properties]
+----
+StudentService/mp-rest/readTimeout = 1000 <1>
+----
+<1> Add this
+--
+
+. Check endpoint, which should result in a "java.net.SocketTimeoutException: Read timed out" because Student doDelay() method is set at a 2000ms delay.
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+# Stack trace ...
+Unable to invoke request: java.net.SocketTimeoutException: Read timed out
+# Stack trace ...
+....
+.Terminal 2 Output
+....
+# Stack trace ...
+Unable to invoke request: java.net.SocketTimeoutException: Read timed out
+# Stack trace ...
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
++
+. Comment out the readTimeout property in application.properties to avoid exception
++
+--
+.frontend application.properties
+[source,properties]
+----
+#StudentService/mp-rest/readTimeout = 1000 <1>
+----
+<1> Comment this out
+--
+
+. Check endpoint
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--

@@ -1,0 +1,102 @@
+== Appendix
+
+=== Deploy to docker using native builds of `student` and `frontend`.
+
+// *********************************************
+
+. Stop student and frontend apps running in development mode to avoid port conflicts
++
+--
+.Terminal 1
+[source/bash]
+----
+# Press CTRL-C to stop Quarkus (student)
+----
+
+.Terminal 2
+[source/bash]
+----
+# Press CTRL-C to stop Quarkus (frontend)
+----
+--
+. Compile `student` native binary
++
+--
+.Terminal 1
+----
+$ cd $PROJ_BASEDIR/student
+$ mvn clean package -Dnative -Dquarkus.native.container-build=true -DskipTests
+----
+
+NOTE: Native compilation is resource intensive. It may take up to 2+ minutes and utilize a lot of RAM. The Docker VM may need to be set to 4GB+ (Docker icon in menu bar or system tray-> Preferences-> Advanced).
+
+.Terminal 1 Output
+....
+...
+...
+[INFO] [io.quarkus.deployment.pkg.steps.NativeImageBuildStep] docker run -v /Users/jclingan/Documents/Personal/OReilly/MicroProfile/solution/solution/student/target/student-1.0-SNAPSHOT-native-image-source-jar:/project:z --rm quay.io/quarkus/ubi-quarkus-native-image:19.2.1 -J-Dsun.nio.ch.maxUpdateArraySize=100 -J-Djava.util.logging.manager=org.jboss.logmanager.LogManager -J-Dvertx.logger-delegate-factory-class-name=io.quarkus.vertx.core.runtime.VertxLogDelegateFactory -J-Dvertx.disableDnsResolver=true -J-Dio.netty.leakDetection.level=DISABLED -J-Dio.netty.allocator.maxOrder=1 --initialize-at-build-time= -H:InitialCollectionPolicy=com.oracle.svm.core.genscavenge.CollectionPolicy$BySpaceAndTime -jar student-1.0-SNAPSHOT-runner.jar -J-Djava.util.concurrent.ForkJoinPool.common.parallelism=1 -H:FallbackThreshold=0 -H:+ReportExceptionStackTraces -H:+AddAllCharsets -H:EnableURLProtocols=http -H:-JNI --no-server -H:-UseServiceLoaderFeature -H:+StackTrace student-1.0-SNAPSHOT-runner
+[student-1.0-SNAPSHOT-runner:23]    classlist:  11,461.31 ms
+[student-1.0-SNAPSHOT-runner:23]        (cap):   1,627.85 ms
+[student-1.0-SNAPSHOT-runner:23]        setup:   3,978.77 ms
+03:35:11,103 INFO  [org.jbo.threads] JBoss Threads version 3.0.0.Final
+[student-1.0-SNAPSHOT-runner:23]   (typeflow):  21,123.43 ms
+[student-1.0-SNAPSHOT-runner:23]    (objects):  17,071.98 ms
+[student-1.0-SNAPSHOT-runner:23]   (features):     472.98 ms
+[student-1.0-SNAPSHOT-runner:23]     analysis:  40,365.68 ms
+[student-1.0-SNAPSHOT-runner:23]     (clinit):     719.13 ms
+[student-1.0-SNAPSHOT-runner:23]     universe:   1,880.23 ms
+[student-1.0-SNAPSHOT-runner:23]      (parse):   3,293.33 ms
+[student-1.0-SNAPSHOT-runner:23]     (inline):   7,098.10 ms
+[student-1.0-SNAPSHOT-runner:23]    (compile):  26,555.96 ms
+[student-1.0-SNAPSHOT-runner:23]      compile:  38,699.39 ms
+[student-1.0-SNAPSHOT-runner:23]        image:   2,898.33 ms
+[student-1.0-SNAPSHOT-runner:23]        write:     635.92 ms
+[student-1.0-SNAPSHOT-runner:23]      [total]: 100,194.70 ms
+[INFO] [io.quarkus.deployment.QuarkusAugmentor] Quarkus augmentation completed in 106387ms
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  01:48 min
+[INFO] Finished at: 2020-01-10T19:36:34-08:00
+[INFO] ------------------------------------------------------------------------
+....
+--
+
+. Compile `frontend` service
++
+--
+.Terminal 1
+----
+$ cd $PROJ_BASEDIR/frontend
+$ mvn clean package -Dnative -Dquarkus.native.container-build=true -DskipTests
+----
+--
++
+
+// *********************************************
+
+. Create docker containers
++
+--
+.Terminal 1
+----
+$ cd $PROJ_BASEDIR/student
+$ docker build -t acme/student:1.0 -f src/main/docker/Dockerfile.native . <1>
+$ cd $PROJ_BASEDIR/frontend
+$ docker build -t acme/frontend:1.0 -f src/main/docker/Dockerfile.native . <1>
+----
+<1> Note the change to Dockerfile.native
+--
++
+// *********************************************
+
+. Start student, frontend, prometheus, and grafana.
++
+--
+.Terminal 1
+[source,bash]
+----
+$ cd $PROJ_BASEDIR/docker
+$ docker-compose up
+----
+--
