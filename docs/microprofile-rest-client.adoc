@@ -146,7 +146,7 @@ Howdy
 .frontend application.properties
 [source,properties]
 ----
-org.acme.StudentService/mp-rest/uri=http://localhost:8081
+org.acme.StudentRestClient/mp-rest/uri=http://localhost:8081
 ----
 --
 
