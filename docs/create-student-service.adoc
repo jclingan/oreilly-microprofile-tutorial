@@ -9,11 +9,7 @@ Create a simple Quarkus project as a starting point - the "student" service. A d
 .Terminal 1
 [source,bash]
 ----
-# In each terminal, set PROJ_BASEDIR, the project top-level-directory,
-#   to somewhere on your local drive
-$ export PROJ_BASEDIR=<path-to-your project>
-$ mkdir $PROJ_BASEDIR
-$ cd $PROJ_BASEDIR
+$ cd tutorial/working
 $ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
     -DprojectGroupId=org.acme \
     -DprojectArtifactId=student \

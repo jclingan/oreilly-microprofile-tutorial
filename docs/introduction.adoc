@@ -12,6 +12,22 @@ This pattern flows quickly due to Quarkus' Live Coding feature, and makes checki
 
 NOTE: This tutorial will require three terminal windows. Each command block will display the terminal where the command is to be run (_Terminal 1_, _Terminal 2_, _Terminal 3_). As the tutorial progresses, it helps to organize the terminals on your screen so they can all be viewed at the same time. In addition, each code block will show the name of the file to be edited (ex: "StudentResource.java")
 
-The source code is https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on[available in GitHub].
+. Clone the project to your local system
++
+--
+.Terminal 1
+----
+$ git clone https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on.git tutorial
+----
+.Terminal 1 Output
+....
+Cloning into 'tutorial'...
+remote: Enumerating objects: 130, done.
+remote: Counting objects: 100% (130/130), done.
+remote: Compressing objects: 100% (92/92), done.
+remote: Total 130 (delta 29), reused 120 (delta 22), pack-reused 0
+Receiving objects: 100% (130/130), 2.50 MiB | 644.00 KiB/s, done.
+Resolving deltas: 100% (29/29), done.
+....
 
-The presentation is available [red]#Location TBD#
+. 

@@ -8,7 +8,7 @@ This section will create a "frontend" service that will utilize the type-safe Mi
 .Terminal 2
 [source,bash]
 ----
-$ cd $PROJ_BASEDIR
+$ cd tutorial/working
 $ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
     -DprojectGroupId=org.acme \
     -DprojectArtifactId=frontend \

@@ -29,14 +29,14 @@ WARNING: Make sure docker daemon is running and is accessible (ex: `docker info`
 
 [source,bash]
 ----
-$ cd $PROJ_BASEDIR/student
+$ cd tutorial/working/student
 $ mvn clean package -DskipTests
 $ docker build -t acme/student:1.0 -f src/main/docker/Dockerfile.jvm .
 ----
 
 .Package frontend as thin jar and create a docker image
 ----
-$ cd $PROJ_BASEDIR/frontend
+$ cd tutorial/working/frontend
 $ mvn clean package -DskipTests
 $ docker build -t acme/frontend:1.0 -f src/main/docker/Dockerfile.jvm .
 ----
@@ -70,7 +70,7 @@ $ docker build -t acme/frontend:1.0 -f src/main/docker/Dockerfile.jvm .
 .Terminal 1
 [source,bash]
 ----
-$ cd $PROJ_BASEDIR/docker
+$ cd tutorial/working/docker
 $ docker-compose up
 ----
 --
@@ -211,7 +211,7 @@ image::images/Configure_Datasource.png[Configure Datasource,400,300]
 .Import JSON File
 image::images/Import_Json_File.png[Grafana-Login,400,300]
 
-. Select Dashboard - $PROJ_BASEDIR/docker/grafana-frontend-dashboard.json
+. Select Dashboard - tutorial/working/docker/grafana-frontend-dashboard.json
 +
 .Select 
 image::images/Select_Dashboard.png[Grafana-Login,400,300]

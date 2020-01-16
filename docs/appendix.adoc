@@ -24,7 +24,7 @@
 --
 .Terminal 1
 ----
-$ cd $PROJ_BASEDIR/student
+$ cd tutorial/working/student
 $ mvn clean package -Dnative -Dquarkus.native.container-build=true -DskipTests
 ----
 
@@ -67,7 +67,7 @@ NOTE: Native compilation is resource intensive. It may take up to 2+ minutes and
 --
 .Terminal 1
 ----
-$ cd $PROJ_BASEDIR/frontend
+$ cd tutorial/working/frontend
 $ mvn clean package -Dnative -Dquarkus.native.container-build=true -DskipTests
 ----
 --
@@ -80,9 +80,9 @@ $ mvn clean package -Dnative -Dquarkus.native.container-build=true -DskipTests
 --
 .Terminal 1
 ----
-$ cd $PROJ_BASEDIR/student
+$ cd tutorial/working/student
 $ docker build -t acme/student:1.0 -f src/main/docker/Dockerfile.native . <1>
-$ cd $PROJ_BASEDIR/frontend
+$ cd tutorial/working/frontend
 $ docker build -t acme/frontend:1.0 -f src/main/docker/Dockerfile.native . <1>
 ----
 <1> Note the change to Dockerfile.native
@@ -96,7 +96,7 @@ $ docker build -t acme/frontend:1.0 -f src/main/docker/Dockerfile.native . <1>
 .Terminal 1
 [source,bash]
 ----
-$ cd $PROJ_BASEDIR/docker
+$ cd tutorial/working/docker
 $ docker-compose up
 ----
 --
