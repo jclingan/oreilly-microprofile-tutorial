@@ -1,0 +1,2 @@
+This directory is a convenience location for implementing the tutorial steps.
+There is nothing in the tutorial that requires using this directory.
