@@ -14,10 +14,12 @@ Build applications as a thin jar files, package them as docker files and start t
 ----
 <1> Comment out current uri
 <2> Properties prefixed with `%dev.` will be used while in development mode only (`mvn quarkus:dev`). 
-<3> Properties prefixed with `%prod.` will be used when not running in native mode or with `java -jar` only. When running via the docker-compose, the host will be "student".
+<3> Properties prefixed with `%prod.` will be used when running in native mode or with `java -jar` only. When running via the docker-compose, the host will be "student".
 
 NOTE: Quarkus supports multiple configuration profiles.  There is also a `%test.` profile when running tests. Properties with no profile defined are always utilized, as has been the case so far in this lab.
 --
+// *********************************************
+'''
 
 . Package applications as docker files
 +
@@ -42,8 +44,8 @@ $ docker build -t acme/frontend:1.0 -f src/main/docker/Dockerfile.jvm .
 ----
 --
 +
-
 // *********************************************
+'''
 
 . Stop student and frontend apps running in development mode to avoid port conflicts
 +
@@ -61,8 +63,8 @@ $ docker build -t acme/frontend:1.0 -f src/main/docker/Dockerfile.jvm .
 ----
 --
 +
-
 // *********************************************
+'''
 
 . Start student, frontend, prometheus, and grafana.
 +
@@ -75,8 +77,8 @@ $ docker-compose up
 ----
 --
 +
-
 // *********************************************
+'''
 
 . View student service health
 +
@@ -108,8 +110,8 @@ t_1             run-java.sh     (unhealthy)     .0.0:8081->80 <1>
 <1> Run `docker-compose ps` until both `(healthy)` and `(unhealthy)` are displayed. In container orchestration environment, these pods containers would be restarted.
 --
 +
-
 // *********************************************
+'''
 
 . Get Prometheus IP address
 +
@@ -179,6 +181,8 @@ $ docker inspect docker_prom_1
 
 NOTE: `docker inspect docker_prom_1 | grep IPAddress` should also make the IP address quickly apparent.
 --
+// *********************************************
+'''
 
 . Log in to Grafana
 .. Point browser to http://localhost:3000/login.
@@ -188,34 +192,59 @@ NOTE: `docker inspect docker_prom_1 | grep IPAddress` should also make the IP ad
 .user:admin, password:admin
 image::images/Grafana_Login.png[Grafana-Login,400,250]
 --
+// *********************************************
+'''
 
 . Add a data source
 +
+--
 .Click "Add datasource`
 image::images/Click_add_Datasource.png[Add-Datasource,600,100]
+--
+// *********************************************
+'''
 
 . Filter and select Prometheus
 +
+--
 .Filter by Prometheus and click Prometheus
 image::images/Filter-Prometheus.png[Filter Prometheus,500,300]
+--
++
+// *********************************************
+'''
 
 . Configure Prometheus Data Source
 +
+--
 *Use the IP address retrieved with `docker inspect` command above*
 
 .Configure URL using IP Address and save & test it
 image::images/Configure_Datasource.png[Configure Datasource,400,300]
+--
++
+// *********************************************
+'''
 
 . Import JSON File
 +
+--
 .Import JSON File
 image::images/Import_Json_File.png[Grafana-Login,400,300]
+--
++
+// *********************************************
+'''
 
 . Select Dashboard - tutorial/working/docker/grafana-frontend-dashboard.json
 +
+--
 .Select 
 image::images/Select_Dashboard.png[Grafana-Login,400,300]
-
+--
++
+// *********************************************
+'''
 
 . Generate load by running curl a random number of times
 +
@@ -229,6 +258,9 @@ $ curl -i localhost:8080/student/list
 $ curl -i localhost:8080/student/list
 ----
 --
++
+// *********************************************
+'''
 
 . Stop the student service
 +
@@ -238,6 +270,9 @@ $ curl -i localhost:8080/student/list
 $ docker-compose stop student
 ----
 --
++
+// *********************************************
+'''
 
 . Generate load by running curl a random number of times with the circuit breaker in an open state.
 +
@@ -248,6 +283,9 @@ $ curl -i localhost:8080/student/list
 $ curl -i localhost:8080/student/list
 ----
 --
++
+// *********************************************
+'''
 
 . View the Grafana dashboard
 +

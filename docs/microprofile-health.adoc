@@ -25,8 +25,8 @@ content-length: 46
 ....
 --
 +
-
 // *********************************************
+'''
 
 . Create a MicroProfile Health Endpoint
 +
@@ -61,13 +61,13 @@ public class StudentHealth implements HealthCheck {
 <4> State is UP (true) or DOWN (false)
 <5> Data can be added to provide state context
 
-NOTE: Retry a few times until both UP and DOWN have been displayed across subsequent requests. If here is more than one health check class in an application, then all must be UP for overall state to be UP.
+NOTE: Retry a few times until both UP and DOWN have been displayed across subsequent requests. If there is more than one health check class in an application, then all must be UP for overall state to be UP.
 
 NOTE: Typically there would be a separate health check class for readiness and liveness, but shown here in a single class for "conciseness" under time constraints. 
 --
 +
-
 // *********************************************
+'''
 
 . Check health liveness endpoint specifically
 +

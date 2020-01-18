@@ -8,7 +8,7 @@ Because tokens are base64 encoded, they can be easily decoded. jwt.io can displa
 
 // *********************************************
 
-. Add the MicroProfile dependency to *both the student service and frontend service* pom.xml files.
+. Add the MicroProfile dependency to *both the student service and frontend service* `pom.xml` files.
 +
 --
 .pom.xml
@@ -21,8 +21,12 @@ Because tokens are base64 encoded, they can be easily decoded. jwt.io can displa
 ----
 <1> Add this
 --
++
 
-. Add required MicroProfile JWT RBAC properties to *both the student service and frontend service* application.property files.
+// *********************************************
+'''
+
+. Add required MicroProfile JWT RBAC properties to *both the student service and frontend service* `application.property` files.
 +
 --
 .application.properties
@@ -35,7 +39,7 @@ mp.jwt.verify.publickey=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtBR6TwVxolT5
 
 === Securing Frontend Service
 
-. Create a new endpoint in FrontendResource.java to display the Principal
+. Create a new endpoint in `FrontendResource.java` to display the Principal
 +
 --
 .FrontendResource.java
@@ -53,7 +57,8 @@ public String tokeninfo() {
 }
 ----
 --
-
+// *********************************************
+'''
 . Check endpoint, which should return 'null' since no principal has been supplied
 +
 --
@@ -73,8 +78,8 @@ Principal: null
 ....
 --
 +
-
 // *********************************************
+'''
 
 . Re-run the command, this time supplying the token:
 +
@@ -96,8 +101,8 @@ Principal: demo
 ....
 --
 +
-
 // *********************************************
+'''
 
 . Update "/tokeninfo" endpoint to display  all claims
 +
@@ -129,6 +134,9 @@ public String tokenInfo() { <2>
 <2> Replace the contents of tokenInfo
 --
 +
+// *********************************************
+'''
+
 . Check the token output
 
 +
@@ -160,8 +168,8 @@ Principal: demo,
 ....
 --
 +
-
 // *********************************************
+'''
 
 .  Secure endpoints by limiting access to specified roles
 +
@@ -201,6 +209,8 @@ public List<String> getStudents() {
 <1> Apply `@RolesAllowed("user")` to the getToken() method
 <2> Apply `@RolesAllowed("superuser")` to the getStudents() method
 --
+// *********************************************
+'''
 
 . Check the endpoints to validate access
 +
@@ -241,11 +251,10 @@ Forbidden
 ....
 NOTE: This time access is denied because the demo user does not belong to the "superuser" group. The demo user belongs to the "user" and "admin" groups. Note the HTTP response code is `403 Forbidden`
 
-
 --
-
 +
 // *********************************************
+'''
 
 . Change the "superuser" role to the "admin" role, which the "demo" user belongs to
 +
@@ -270,6 +279,8 @@ public List<String> getStudents() {
 ----
 <1> Change "superuser" to "admin"
 --
+// *********************************************
+'''
 
 . Check access with newly supplied "admin" role
 +
@@ -291,7 +302,7 @@ Content-Type: application/json
 
 === Securing Student Service
 
-. Secure StudentResource.listStudents(), requiring the admin role
+. Secure `StudentResource.listStudents()`, requiring the admin role
 +
 --
 .StudentResource.java
@@ -324,6 +335,8 @@ Content-Type: application/json
 ....
 This implies that the request to the student service is not being managed properly because the fallback output is returned.
 --
+// *********************************************
+'''
 
 . The token needs to be forwarded to the student service. This requires annotating StudentRestClient with `@RegisterClientHeaders` and defining the headers to propagate (Authorization header) using the `org.eclipse.microprofile.rest.client.propagateHeaders` property.
 +
@@ -360,5 +373,3 @@ Content-Type: application/json
 
 The token (Authorization header) has been successfully propagated.
 --
-
-NOTE: MicroProfile JWT RBAC can be disabled in Quarkus using the `quarkus.smallrye-jwt.enabled=false` property setting, which removes the need to provide a token. This can be useful while developing non-security-related functionality.
