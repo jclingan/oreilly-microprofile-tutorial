@@ -60,6 +60,8 @@ public class FrontendResource {
     // @Timeout
     @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5, delay = 10000, successThreshold = 2)
     @Fallback(fallbackMethod = "listStudentsFallback")
+    // Fallback to a handler instead of a method
+    // @Fallback(value = ListStudentsFallbackHandler.class)
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/list")

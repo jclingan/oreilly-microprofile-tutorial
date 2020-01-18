@@ -1,6 +1,6 @@
 == Create Student Service
 
-Create a simple Quarkus project as a starting point - the "student" service. A default RESTful endpoint is generated. While this workshop utilizes the mvn command line tooling, projects can also be generated at http://code.quarkus.io[code.quarkus.io] using a Web UI.
+Create a simple Quarkus project as a starting point - the "student" service. A default RESTful endpoint is generated. While this tutorial utilizes the mvn command line tooling, projects can also be generated at http://code.quarkus.io[code.quarkus.io] using a Web UI.
 
 . Go to the project's base directory and create project using maven
 +
@@ -18,6 +18,9 @@ $ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
     -Dextensions="resteasy-jsonb,smallrye-health"
 ----
 --
++
+// *********************************************
+'''
 
 . Optional: To see a list of available extensions, type:
 
@@ -30,6 +33,9 @@ $ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
 $ mvn quarkus:list-extensions
 ----
 --
++
+// *********************************************
+'''
 
 . Open project in your favorite IDE
 .. Open StudentResource.java and peruse the JAX-RS source code
@@ -56,10 +62,13 @@ public class StudentResource {
     }
 }
 ----
+
+NOTE: The generated project does not include a JAX-RS Application class. Quarkus will provide a default JAX-RS Application class if one is not provided by the developer. In addition, Quarkus RESTful resources are `@ApplicationScoped` by default when a scope is not specified. These are non-portable developer convenience features. These points are covered in the https://quarkus.io/guides/getting-started#the-jax-rs-resources[Quarkus Getting Started Guide].
 --
 
 +
-NOTE: The generated project does not include a JAX-RS Application class. Quarkus will provide a default JAX-RS Application class if one is not provided by the developer. In addition, a single instance of a RESTful resource is created by default. These are non-portable developer convenience features. These points are covered in the https://quarkus.io/guides/getting-started#the-jax-rs-resources[Quarkus Getting Started Guide].
+// *********************************************
+'''
 
 . Start Quarkus in developer mode
 
@@ -72,8 +81,8 @@ $ mvn quarkus:dev
 ----
 --
 +
-
-// ***********************************************
+// *********************************************
+'''
 
 . Check that the endpoint returns "hello"
 
@@ -94,8 +103,8 @@ hello
 ....
 --
 +
-
-// ***********************************************
+// *********************************************
+'''
 
 . Experience live reload. In the StudentResource.java hello() method, replace "Hello" with "Howdy" and save the file
 +
@@ -131,8 +140,8 @@ Howdy
 ....
 
 +
-
 // *********************************************
+'''
 
 . In StudentResource.java, create a list of Strings:
 +
@@ -146,8 +155,11 @@ public class StudentResource {
 ----
 <1> Add this line
 --
++
+// *********************************************
+'''
 
-. Add a method called listStudents at the "/list" path that returns the students as a JSON array
+. Add a method called `listStudents()` at the "/list" path that returns the students as a JSON array
 +
 --
 .StudentResource.java
@@ -161,6 +173,9 @@ public List<String> listStudents() {
 }
 ----
 --
++
+// *********************************************
+'''
 
 . Check the output
 +

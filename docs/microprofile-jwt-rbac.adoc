@@ -358,5 +358,7 @@ Content-Type: application/json
 ["Duke"," John"," Jane"," Arun"," Christina"]
 ....
 
-The token (Authorization header) has been successfull propagated.
+The token (Authorization header) has been successfully propagated.
 --
+
+NOTE: MicroProfile JWT RBAC can be disabled in Quarkus using the `quarkus.smallrye-jwt.enabled=false` property setting, which removes the need to provide a token. This can be useful while developing non-security-related functionality.

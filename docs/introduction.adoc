@@ -1,8 +1,8 @@
 == Introduction
 
-This lab builds two Java services from scratch that incrementally add Eclipse MicroProfile APIs. The first service is `frontend`, which invokes a `student` backend service that returns a list of students. This domain model is simple so the focus is spent on the MicroProfile APIs themselves.
+This tutorial builds two Java services from scratch that incrementally add Eclipse MicroProfile APIs. The first is a `student` service that returns a list of students, which is invoke by a `frontend` service. This domain model is simple so the focus is spent on the MicroProfile APIs themselves.
 
-The documented steps in this lab follow a pattern:
+The documented steps in this tutorial follow a pattern:
 
 . Write code
 . Run a command to test code (curl)
@@ -10,14 +10,16 @@ The documented steps in this lab follow a pattern:
 
 This pattern flows quickly due to Quarkus' Live Coding feature, and makes checking code changes near-instantaneous so each change can be immediately evaluated.
 
-NOTE: This tutorial will require three terminal windows. Each command block will display the terminal where the command is to be run (_Terminal 1_, _Terminal 2_, _Terminal 3_). As the tutorial progresses, it helps to organize the terminals on your screen so they can all be viewed at the same time. In addition, each code block will show the name of the file to be edited (ex: "StudentResource.java")
+NOTE: This tutorial will require three terminal windows. Each command block will display the terminal where the command is to be run - _Terminal 1_, _Terminal 2_, or _Terminal 3_. As the tutorial progresses, it helps to organize the terminals on your screen so they can all be viewed at the same time. In addition, each code block will show the name of the file to be edited (ex: "StudentResource.java")
 
 . Clone the project to your local system
 +
 --
 .Terminal 1
 ----
-$ git clone https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on.git tutorial
+$ git clone \
+  https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on.git \
+  tutorial
 ----
 .Terminal 1 Output
 ....

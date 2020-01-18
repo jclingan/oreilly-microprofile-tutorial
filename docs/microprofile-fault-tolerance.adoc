@@ -2,7 +2,7 @@
 
 This section will utilize fault tolerance patterns in the frontend service to handle problematic conditions caused by the student service.
 
-. Add a timeout to FrontendResource listStudents()
+. Add a timeout to `FrontendResource.listStudents()`
 +
 --
 .FrontendResource.java
@@ -16,10 +16,12 @@ public List<String> listStudents() {
     return student.listStudents();
 }
 ----
-<1> Add Timeout annotation, which defaults to 1000ms
+<1> Add `@Timeout` annotation, which defaults to 1000ms
 --
-
-. Check endpoint. Verify org.eclipse.microprofile.faultolerance.exceptions.TimeoutException is thrown.
++
+// *********************************************
+'''
+. Check endpoint. Verify `org.eclipse.microprofile.faultolerance.exceptions.TimeoutException` is thrown.
 +
 --
 .Terminal 3
@@ -46,8 +48,8 @@ com.netflix.hystrix.exception.HystrixRuntimeException: org_acme_FrontendResource
 ....
 --
 +
-
 // *********************************************
+'''
 
 . Add a fallback method to provide alternative logic when an exception is thrown
 +
@@ -70,10 +72,12 @@ public List<String> listStudentsFallback() {
     return Arrays.asList("Smart Sam", "Genius Gabby", "A-Student Angie", "Intelligent Irene");
 }
 ----
-<1> Add Fallback annotation
+<1> Add `@Fallback` annotation
 <2> Add fallback method. Note, it must have same method signature
 --
-
++
+// *********************************************
+'''
 . Check endpoint. Verify the fallback student list is retrieved
 +
 --
@@ -98,10 +102,10 @@ Content-Type: application/json
 ....
 --
 +
-
 // *********************************************
+'''
 
-. Disable all fault tolerance annotations (except Fallback). Useful for when running in a service mesh (e.g. Istio) environment. Commenting out any one of the Timeout-disabling properties will disable the timeout.
+. Disable all fault tolerance annotations (except `@Fallback`). Useful for when running in a service mesh (e.g. Istio) environment. Commenting out any one of the timeout-disabling properties will disable the timeout.
 +
 --
 .frontend application.properties
@@ -118,6 +122,9 @@ MP_Fault_Tolerance_NonFallback_Enabled=false <1>
 ----
 <1> All fault tolerance annotations disabled because this annotation is not commented out
 --
++
+// *********************************************
+'''
 
 . Check that original list of students is returned
 +
@@ -143,10 +150,10 @@ Content-Type: application/json
 ....
 --
 +
-
 // *********************************************
+'''
 
-. Comment out MP_Fault_Tolerance_NonFallback_Enabled=false in application.properties
+. Comment out `MP_Fault_Tolerance_NonFallback_Enabled=false` in `application.properties`
 +
 --
 .frontend application.properties
@@ -162,7 +169,89 @@ Content-Type: application/json
 #org.acme.FrontendResource/listStudents/Timeout/enabled=false
 ----
 <1> Commented out
+
+NOTE: Feel free to uncomment the more specific approaches (all timeouts or just the timeout on `listStudents()`) and try them out. Just remember to comment them all out before continuing beyond this step.
+
 --
++
+// *********************************************
+'''
+
+. External configuration of fault tolerance parameters. 
++
+--
+
+NOTE: MicroProfile Fault Tolerance allows any fault tolerance annotation parameter to be configured in application.properties, overriding the value in source code. 
+
+.frontend application.properties
+[source,properties]
+----
+...
+...
+#org.acme.FrontendResource/listStudents/Timeout/enabled=false
+org.acme.FrontendResource/listStudents/Timeout/value=3000 <1>
+----
+<1> Add this, making the timeout longer than the wait time and preventing the fallback from being called.
+
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
+// *********************************************
+'''
+
+. Comment out timeout value in `application.properties` so annotation parameter values are used
++
+--
+.frontend application.properties
+[source,properties]
+----
+...
+...
+#org.acme.FrontendResource/listStudents/Timeout/enabled=false
+#org.acme.FrontendResource/listStudents/Timeout/value=3000 <1>
+----
+<1> Comment this out
+
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 66
+Content-Type: application/json
+
+["Smart Sam","Genius Gabby","A-Student Angie","Intelligent Irene"]
+....
+
+.Terminal 1 Output
+....
+** Waiting 2000ms **
+....
+--
+
++
+
+// *********************************************
+'''
 
 . Check endpoint. Verify fallback list of students is retrieved
 +
@@ -187,8 +276,8 @@ Content-Type: application/json
 ....
 --
 +
-
 // *********************************************
+'''
 
 . Update doDelay() in StudentResource.java to return a random delay.
 +
@@ -209,6 +298,9 @@ void doDelay() {
 ----
 <1> Updated code to print random number: `delayTime=(int)(Math.random()*delay);`
 --
++
+// *********************************************
+'''
 
 . Verify random sleep time.
 +
@@ -240,8 +332,8 @@ NOTE: Because the delay is random, a longer delay will return the fallback stude
 NOTE: Retry a few times to see random sleep times. Keep retrying until Timeout threshold is reached and fallback method is called.
 --
 +
-
 // *********************************************
+'''
 
 . Add a @Retry annotation, which by default will retry a request up to 3 times when exception is caught (e.g. TimeoutException)
 +
@@ -263,8 +355,8 @@ public List<String> getStudents() {
 --
 
 +
-
 // *********************************************
+'''
 
 . Check retry logic
 +
@@ -294,10 +386,10 @@ or
 NOTE: Re-run command until there are at least two output lines in Terminal 1 for a single `curl` command, at least one of which will be more than 500ms.
 --
 +
-
 // *********************************************
+'''
 
-. Replace Timeout logic with a CircuitBreaker
+. Replace `@Timeout` logic with a `@CircuitBreaker`
 +
 --
 .FrontendResource.java
@@ -327,6 +419,9 @@ public List<String> getStudents() {
 <6> Wait 1000 milliseconds before allowing another request. Until then, each request will result in a CircuitBreakerOpen exception
 <7> Number of consecutive successful requests before circuit transitions from the half-open state to the closed state. The circuit breaker enters the half-open state upon the first successful request.
 --
++
+// *********************************************
+'''
 
 . Check CircuitBreaker logic
 +
@@ -364,6 +459,9 @@ Content-Type: application/json
 CTRL-C
 ----
 --
++
+// *********************************************
+'''
 
 . Check the circuit breaker
 +
@@ -371,15 +469,16 @@ CTRL-C
 .Terminal 3
 [source,bash]
 ----
-curl -i localhost:8080/frontend/list
+$ curl -i localhost:8080/frontend/list
 ----
 --
 +
 
 This will result in circuit breaker entering "open" state and throws a CircuitBreakerOpenException, which is caught by fallback logic to invoke fallback method. Try running this a few times.
-+
 
++
 // *********************************************
+'''
 
 . Re-run student service
 +
@@ -390,6 +489,9 @@ This will result in circuit breaker entering "open" state and throws a CircuitBr
 mvn quarkus:dev -Ddebug=5006
 ----
 --
++
+// *********************************************
+'''
 
 . Retry until circuit breaker closes and the normal student list is displayed.
 +

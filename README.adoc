@@ -17,5 +17,5 @@ NOTE: This hands-on tutorial accompanies an https://learning.oreilly.com/live-tr
 
 == Additional Informatioin
 * Source code is https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on[available in GitHub].
-* https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on/docs[Instructions]
+* Tutorial https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on/tree/master/docs[Instructions]
 * The accompanying slides are available at [red]#Location TBD# 

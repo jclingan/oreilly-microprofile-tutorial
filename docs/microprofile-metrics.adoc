@@ -10,7 +10,25 @@ This section will cover business and performance metrics that will be graphed in
 ----
 $ curl -i http://localhost:8080/metrics
 ----
+.Terminal 3 Output
+....
+...
+...
+# TYPE application_ft_org_acme_FrontendResource_listStudents_circuitbreaker_callsSucceeded_total counter
+application_ft_org_acme_FrontendResource_listStudents_circuitbreaker_callsSucceeded_total 2.0
+# HELP base_gc_time_total Displays the approximate accumulated collection elapsed time in milliseconds. This attribute displays -1 if the collection elapsed time is undefined for this collector. The Java virtual machine implementation may use a high resolution timer to measure the elapsed time. This attribute may display the same value even if the collection count has been incremented if the collection elapsed time is very short.
+# TYPE base_gc_time_total counter
+base_gc_time_total_seconds{name="PS MarkSweep"} 0.156
+...
+...
+....
+
+NOTE: OpenMetrics format provides metadata like metrics type (ex: gauge) and description
+
+
 --
+// *********************************************
+'''
 
 . View base metrics (in JSON this time)
 +
@@ -55,8 +73,8 @@ content-length: 630
 ....
 --
 +
-
 // *********************************************
+'''
 
 . View vendor-specific (Quarkus) metrics (in JSON)
 +
@@ -103,8 +121,8 @@ content-length: 933
 ....
 --
 +
-
 // *********************************************
+'''
 
 . View application metrics (in JSON)
 +
@@ -142,8 +160,8 @@ content-length: 1162
 ....
 --
 +
-
 // *********************************************
+'''
 
 . Add @Counted to FrontendResource, counting invocations for each method
 +
@@ -163,8 +181,8 @@ public class FrontendResource {
 <1> Add @Counted annotation
 --
 +
-
 // *********************************************
+'''
 
 . Time getStudents() method duration
 +
@@ -193,6 +211,8 @@ public List<String> getStudents() {
 <2> *name* Metric name (custom name)
 <3> *displayName* Human-readable name
 --
+// *********************************************
+'''
 
 . View Count metrics
 +
@@ -222,8 +242,8 @@ application_listStudentsTime_seconds{quantile="0.999"} 1.963374472
 ....
 --
 +
-
 // *********************************************
+'''
 
 . View Timed metrics
 +

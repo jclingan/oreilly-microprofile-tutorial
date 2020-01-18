@@ -1,6 +1,6 @@
 == MicroProfile Rest Client
 
-This section will create a "frontend" service that will utilize the type-safe MicroProfile Rest Client API to invoke the student service. Additional Quarkus extensions (aka maven dependencies) aree  also added to support upcoming sections well.
+This section creates a "frontend" service that utilizes the type-safe MicroProfile Rest Client API to invoke the student service. Additional Quarkus extensions (aka maven dependencies) are also added to support upcoming sections well.
 
 . Create frontend project using mvn command line
 +
@@ -18,12 +18,13 @@ $ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
 ----
 --
 +
-
 // *********************************************
+'''
 
 . Open frontend project in your IDE
 +
 // *********************************************
+'''
 
 . Start frontend in Quarkus dev mode
 +
@@ -35,11 +36,11 @@ $ mvn compile quarkus:dev
 ----
 --
 +
-
 // *********************************************
+'''
 
 
-. Create src/main/java/org/acme/StudentRestClient.java and paste in the following content
+. Create `src/main/java/org/acme/StudentRestClient.java` and paste in the following content
 +
 --
 .frontend/src/main/java/org/acme/StudentRestClient.java
@@ -71,10 +72,10 @@ public interface StudentRestClient {
 ----
 --
 +
-
 // *********************************************
+'''
 
-. Inject StudentRestClient into FrontendResource.java
+. Inject `StudentRestClient` into `FrontendResource.java`
 +
 --
 .FrontendResource.java
@@ -86,10 +87,10 @@ StudentRestClient student;
 ----
 --
 +
-
 // *********************************************
+'''
 
-. Change hello() method to invoke student service hello endpoint
+. Change `hello()` method to invoke student service student service `hello` endpoint
 +
 --
 .FrontendResource.java
@@ -123,10 +124,10 @@ Howdy
 ....
 --
 +
-
 // *********************************************
+'''
 
-. Remove baseURI parameter from @RegisterRestClient so it can be configured using a property
+. Remove `baseURI` parameter from `@RegisterRestClient` so it can be configured using a property
 +
 --
 .StudentRestClient.java
@@ -137,10 +138,10 @@ Howdy
 <1> Removed `(baseUri = "http://localhost:8081")`
 --
 +
-
 // *********************************************
+'''
 
-. Configure rest client baseUri in application.properties
+. Configure rest client `baseUri` in `application.properties`
 +
 --
 .frontend application.properties
@@ -149,6 +150,9 @@ Howdy
 org.acme.StudentRestClient/mp-rest/uri=http://localhost:8081
 ----
 --
++
+// *********************************************
+'''
 
 . Check endpoint
 +
@@ -169,10 +173,10 @@ Howdy
 ....
 --
 +
-
 // *********************************************
+'''
 
-. Update @RegisterRestClient annotation to specify configKey in StudentRestClient.java
+. Update `@RegisterRestClient` annotation to specify `configKey` in `StudentRestClient.java`
 +
 --
 .StudentRestClient.java
@@ -182,10 +186,10 @@ Howdy
 ----
 --
 +
-
 // *********************************************
+'''
 
-. Update the frontend application.properties to utilize the configKey
+. Update the frontend `application.properties` to utilize the `configKey`
 +
 --
 .frontend application.properties
@@ -194,6 +198,9 @@ Howdy
 StudentService/mp-rest/uri=http://localhost:8081
 ----
 --
++
+// *********************************************
+'''
 
 . Check endpoint
 +
@@ -213,10 +220,10 @@ Howdy
 ....
 --
 +
-
 // *********************************************
+'''
 
-. Add listStudents() method to FrontendResource.java.
+. Add `listStudents()` method to `FrontendResource.java`.
 +
 --
 .FrontendResource.java
@@ -231,10 +238,10 @@ public List<String> listStudents() {
 ----
 --
 +
-
 // *********************************************
+'''
 
-. Specify a StudentRestClient readTimeout in frontend application.properties that will throw an exception if read time threshold is exceeded
+. Specify a `StudentRestClient readTimeout` in frontend `application.properties` that will throw an exception if read time threshold is exceeded
 +
 --
 .frontend application.properties
@@ -244,6 +251,9 @@ StudentService/mp-rest/readTimeout = 1000 <1>
 ----
 <1> Add this
 --
++
+// *********************************************
+'''
 
 . Check endpoint, which should result in a "java.net.SocketTimeoutException: Read timed out" because Student doDelay() method is set at a 2000ms delay.
 +
@@ -272,7 +282,10 @@ Unable to invoke request: java.net.SocketTimeoutException: Read timed out
 ....
 --
 +
-. Comment out the readTimeout property in application.properties to avoid exception
+// *********************************************
+'''
+
+. Comment out the `readTimeout` property in `application.properties` to avoid exception
 +
 --
 .frontend application.properties
@@ -282,6 +295,9 @@ Unable to invoke request: java.net.SocketTimeoutException: Read timed out
 ----
 <1> Comment this out
 --
++
+// *********************************************
+'''
 
 . Check endpoint
 +
