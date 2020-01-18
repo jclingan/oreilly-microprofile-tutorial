@@ -13,7 +13,9 @@ This section will utilize fault tolerance patterns in the frontend service to ha
 @Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
 public List<String> listStudents() {
-    return student.listStudents();
+    List<String> students = student.listStudents();
+    
+    return students;
 }
 ----
 <1> Add `@Timeout` annotation, which defaults to 1000ms
@@ -63,13 +65,17 @@ com.netflix.hystrix.exception.HystrixRuntimeException: org_acme_FrontendResource
 @Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
 public List<String> listStudents() {
-    return student.listStudents();
+    List<String> students = student.listStudents();
+    
+    return students;
 }
 
 // Add this method <2>
 public List<String> listStudentsFallback() {
     // Return top students across all classes
-    return Arrays.asList("Smart Sam", "Genius Gabby", "A-Student Angie", "Intelligent Irene");
+    List<String> students = Arrays.asList("Smart Sam", "Genius Gabby", "A-Student Angie", "Intelligent Irene");
+    
+    return students;
 }
 ----
 <1> Add `@Fallback` annotation
@@ -348,7 +354,9 @@ NOTE: Retry a few times to see random sleep times. Keep retrying until Timeout t
 @Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
 public List<String> getStudents() {
-    return student.listStudents();
+    List<String> students = student.listStudents();
+    
+    return students;
 }
 ----
 <1> Add this
@@ -408,7 +416,9 @@ NOTE: Re-run command until there are at least two output lines in Terminal 1 for
 @Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
 public List<String> getStudents() {
-    return student.listStudents();
+    List<String> students = student.listStudents();
+    
+    return students;
 }
 ----
 <1> Comment out @Timeout

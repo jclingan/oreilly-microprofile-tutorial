@@ -1,6 +1,6 @@
 == MicroProfile Metrics
 
-This section will cover business and performance metrics that will be graphed in Prometheus and Grafana in the packaging section.
+This section will cover business and performance metrics that will be graphed in Prometheus and Grafana in the packaging and deployment section.
 
 . View all default metrics (in Prometheus/OpenMetrics format)
 +
@@ -163,7 +163,7 @@ content-length: 1162
 // *********************************************
 '''
 
-. Add @Counted to FrontendResource, counting invocations for each method
+. Add `@Counted` to `FrontendResource`, counting invocations for each method
 +
 --
 .FrontendResource.java
@@ -178,13 +178,13 @@ public class FrontendResource {
     StudentRestClient student;
 // ...
 ----
-<1> Add @Counted annotation
+<1> Add `@Counted` annotation
 --
 +
 // *********************************************
 '''
 
-. Time getStudents() method duration
+. Time `getStudents()` method duration
 +
 --
 .FrontendResource.java
@@ -204,7 +204,9 @@ public class FrontendResource {
 @Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
 public List<String> getStudents() {
-    return student.listStudents();
+    List<String> students = student.listStudents();
+    
+    return students;
 }
 ----
 <1> *absolute* Remove package name. Metric uses name parameter if it exists, if not it uses the name of the class or method.
@@ -214,7 +216,7 @@ public List<String> getStudents() {
 // *********************************************
 '''
 
-. View Count metrics
+. View `@Count` metrics
 +
 --
 .Terminal 3
@@ -240,12 +242,16 @@ application_listStudentsTime_seconds{quantile="0.98"} 1.963374472
 application_listStudentsTime_seconds{quantile="0.99"} 1.963374472
 application_listStudentsTime_seconds{quantile="0.999"} 1.963374472
 ....
+
+
+NOTE: Notice some metrics have curly braces around them "{}". These are metric tags that subset a metric. See the https://github.com/jclingan/microprofile-quarkus-metrics-tags[metrics-tags example] to see metric tags in action.
+
 --
 +
 // *********************************************
 '''
 
-. View Timed metrics
+. View `@Timed` metrics
 +
 --
 .Terminal 3
@@ -262,5 +268,114 @@ application_FrontendResourceCounter_listStudents_total 4.0
 application_listStudentsTime_seconds_count 4.0
 ....
 --
++
+// *********************************************
+'''
 
-NOTE: Notice some metrics have curly braces around them "{}". These are metric tags that subset a metric. See the https://github.com/jclingan/microprofile-quarkus-metrics-tags[metrics-tags example] to see metric tags in action.
+. Add a field to hold the size of the student list
++
+--
+.FrontendResource.java
+[source,java]
+----
+public class FrontendResource {
+    int numStudents; <1>
+----
+<1> Add this
+--
++
+// *********************************************
+'''
+
+. Assign list size to `numStudents` in `listStudents()`
++
+--
+.FrontendResource.java
+[source,java]
+----
+public List<String> listStudents() {
+    List<String> students = student.listStudents();
+    numStudents = students.size(); <1>
+
+    return students;
+}
+----
+<1> Add this
+--
++
+// *********************************************
+'''
+
+. Assign list size to `numStudents` in `listStudentsFallback`
++
+--
+.FrontendResource.java
+[source,java]
+----
+public List<String> listStudentsFallback() {
+    List<String> students = Arrays.asList("Smart Sam", "Genius Gabby", "A-Student Angie", "Intelligent Irene");
+    numStudents = students.size();<1>
+
+    return students;
+}
+----
+<1> Add this
+--
++
+// *********************************************
+'''
+
+. Create a gauge to display number of students
++
+--
+.FrontendResource.java
+[source,java]
+----
+@Gauge(unit = MetricUnits.NONE, name = "numberOfStudents",
+    absolute = true)
+public int getNumberOfStudents() {
+    return numStudents;
+}
+----
+<1> Add this
+--
++
+// *********************************************
+'''
+
+. "Prime" numStudents by calling listStudents()
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i localhost:8080/frontend/list
+----
+.Terminal 3 Output
+....
+HTTP/1.1 200 OK
+Content-Length: 41
+Content-Type: application/json
+
+["Duke","John","Jane","Arun","Christina"]
+....
+--
++
+// *********************************************
+'''
+
+. Get number of students using the gauge
++
+--
+.Terminal 3
+[source,bash]
+----
+$ curl -i -s localhost:8080/metrics/application  | \
+  grep -i application_numberOfStudents
+----
+.Terminal 3 Output
+....
+# TYPE application_numberOfStudents gauge
+application_numberOfStudents 5.0
+....
+--

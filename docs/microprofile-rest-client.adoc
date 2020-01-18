@@ -233,7 +233,9 @@ Howdy
 @Produces(MediaType.APPLICATION_JSON)
 @Path("/list")
 public List<String> listStudents() {
-    return student.listStudents();
+    List<String> students = student.listStudents();
+    
+    return students;
 }
 ----
 --

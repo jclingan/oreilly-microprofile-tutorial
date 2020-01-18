@@ -16,13 +16,16 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
+import org.eclipse.microprofile.metrics.annotation.Gauge;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @Counted
 @Path("/frontend")
 public class FrontendResource {
+    int numStudents;
 
     @Inject
     @RestClient
@@ -66,11 +69,22 @@ public class FrontendResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/list")
     public List<String> listStudents() {
-        return student.listStudents();
+        List<String> students = student.listStudents();
+        numStudents = students.size();
+
+        return students;
     }
 
     public List<String> listStudentsFallback() {
         // Return top students across all classes
-        return Arrays.asList("Smart Sam", "Genius Gabby", "A-Student Angie", "Intelligent Irene");
+        List<String> students = Arrays.asList("Smart Sam", "Genius Gabby", "A-Student Angie", "Intelligent Irene");
+        numStudents = students.size();
+
+        return students;
+    }
+
+    @Gauge(unit = MetricUnits.NONE, name = "numberOfStudents", absolute = true)
+    public int getNumberOfStudents() {
+        return numStudents;
     }
 }
