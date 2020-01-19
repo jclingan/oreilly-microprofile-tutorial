@@ -100,3 +100,90 @@ $ cd tutorial/working/docker
 $ docker-compose up
 ----
 --
+
+=== Using jwtenizr
+
+https://github.com/AdamBien/jwtenizr[jwtenizr] is a handy tool created by http://adam-bien.com[Adam Bien] to create MicroProfile-ready tokens. This tutorial includes a `jwt` subdirectory that includes:
+
+* *jwtenizr.jar*: A conveniently pre-compiled jar file. Feel free to download and compile your own jar file.
+* *jwtenizr.sh*: A convient shell script that invokes the jar file
+* *Pre-generated artifacts*: Makes explaining this tutorial consistent over time. Includes:
+** *jwt-token.json*: Contains pe-defined token contents. An important aspect to call out is that the `exp` (expiration) claim was added to ensure this token does not expire until Jan 2120. Without this addition, jwtenizr will use an expiration time of 1000 seconds (~16 minutes) from when the token was created.
+** The remainder of the artifacts is documented in the https://github.com/AdamBien/jwtenizr[jwtenizr github].
+
+To generate a new token with the default 1000 second expiration time, remove the `exp` line from jwt-token.json, which would then look as follows:
+
+.jwt-token.json
+[source,json]
+----
+{
+  "iss":"airhacks",
+  "jti":"airhacks-jwt-unique-id-12342142",
+  "sub":"user/43971",
+  "upn":"demo@acme.org",
+  "myc":"My Custom Claim",
+  "groups":[
+    "user",
+    "admin"
+  ]
+}
+----
+
+==== Generate a new token with a customized expiration (Mac/Linux)
+
+. Get the current date
++
+--
+.Terminal Window
+[source,bash]
+----
+# Get the number of seconds since the Epoch (Jan 1, 1970) and add to it (200 seconds in the following example):
+
+$ $((`date +%s` + 200)) <1>
+1579412832 <2>
+----
+
+<1> The first `$` is the command prompt :-)
+<2> The output from the evaluated expression. This is the current time plus 200 seconds. Replace `200` with whatever value you want.
+--
+
+. Place that number as the expiration claim in `jwt-token.json`:
++
+--
+.jwt-token.json
+[source,json]
+----
+{
+  "iss":"airhacks",
+  "jti":"airhacks-jwt-unique-id-12342142",
+  "sub":"user/43971",
+  "exp":1579412832, <1>
+  "upn":"demo@acme.org",
+  "myc":"My Custom Claim",
+  "groups":[
+    "user",
+    "admin"
+  ]
+}
+----
+
+<1> Add the expiration claim with the expiration date acquired from the prior step.
+--
+
+. Re-run the jwtenizer to generate an updated token
++
+--
+.Terminal
+[source, bash]
+----
+$ cd tutorial/jwt
+$ ./jwtenizr.sh
+----
+
+NOTE: While running `jwtenizr.sh` will not add the `exp` claim to `jwt-token.json`, copying the generated token from `token.jwt` and pasting it into http://jwt.io[jwt.io] will show the token does include the `exp` claim.
+--
+
+. Use the new token in requests to the `frontend`
+
+
+

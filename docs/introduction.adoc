@@ -31,5 +31,4 @@ remote: Total 130 (delta 29), reused 120 (delta 22), pack-reused 0
 Receiving objects: 100% (130/130), 2.50 MiB | 644.00 KiB/s, done.
 Resolving deltas: 100% (29/29), done.
 ....
-
-. 
+--

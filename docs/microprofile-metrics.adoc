@@ -244,7 +244,7 @@ application_listStudentsTime_seconds{quantile="0.999"} 1.963374472
 ....
 
 
-NOTE: Notice some metrics have curly braces around them "{}". These are metric tags that subset a metric. See the https://github.com/jclingan/microprofile-quarkus-metrics-tags[metrics-tags example] to see metric tags in action.
+NOTE: Notice some metrics have curly braces around them "{}". These are metric tags that subset a metric. See the https://github.com/jclingan/mp-metrics-tags[metrics-tags example] to see metric tags in action.
 
 --
 +
@@ -337,7 +337,6 @@ public int getNumberOfStudents() {
     return numStudents;
 }
 ----
-<1> Add this
 --
 +
 // *********************************************
@@ -379,3 +378,5 @@ $ curl -i -s localhost:8080/metrics/application  | \
 application_numberOfStudents 5.0
 ....
 --
+
+Another useful example, beyond this tutorial, is the https://github.com/jclingan/mp-health-metrics[health-metrics example], which demonstrates the use of the metrics repository API. 
