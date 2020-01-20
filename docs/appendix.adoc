@@ -108,7 +108,7 @@ https://github.com/AdamBien/jwtenizr[jwtenizr] is a handy tool created by http:/
 * *jwtenizr.jar*: A conveniently pre-compiled jar file. Feel free to download and compile your own jar file.
 * *jwtenizr.sh*: A convient shell script that invokes the jar file
 * *Pre-generated artifacts*: Makes explaining this tutorial consistent over time. Includes:
-** *jwt-token.json*: Contains pe-defined token contents. An important aspect to call out is that the `exp` (expiration) claim was added to ensure this token does not expire until Jan 2120. Without this addition, jwtenizr will use an expiration time of 1000 seconds (~16 minutes) from when the token was created.
+** *jwt-token.json*: Contains pe-defined token contents. An important aspect to call out is that the `exp` (expiration) claim was added to ensure this token does not expire until Jan 2070. Without this addition, jwtenizr will use an expiration time of 1000 seconds (~16 minutes) from when the token was created.
 ** The remainder of the artifacts is documented in the https://github.com/AdamBien/jwtenizr[jwtenizr github].
 
 To generate a new token with the default 1000 second expiration time, remove the `exp` line from jwt-token.json, which would then look as follows:
