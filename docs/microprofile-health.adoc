@@ -48,7 +48,7 @@ public class StudentHealth implements HealthCheck {
     public HealthCheckResponse call() {
         double random = Math.random();
         return HealthCheckResponse
-            .named("UnstableServiceCheck")         <3>
+            .named("StudentLivenessReadiness")         <3>
             .state(random < .50 ? true : false)    <4>
             .withData("randomNumber", "" + random) <5>
             .build();
@@ -89,7 +89,7 @@ content-length: 231
     "status": "DOWN",
     "checks": [
         {
-            "name": "UnstableServiceCheck",
+            "name": "StudentLivenessReadiness",
             "status": "DOWN",
             "data": {
                 "randomNumber": "0.60806403626233085"

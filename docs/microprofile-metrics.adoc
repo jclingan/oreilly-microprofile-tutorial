@@ -222,7 +222,7 @@ public List<String> getStudents() {
 .Terminal 3
 [source,bash]
 ----
-$ curl -i -s localhost:8080/metrics/application | grep -i count | grep -v TYPE
+$ curl -i -s localhost:8080/metrics/application | grep -i time | grep -v TYPE
 ----
 .Terminal 3 Output
 ....
@@ -257,7 +257,7 @@ NOTE: Notice some metrics have curly braces around them "{}". These are metric t
 .Terminal 3
 [source,bash]
 ----
-$ curl -i localhost:8080/metrics/application | grep -i time | grep -v TYPE
+$ curl -i localhost:8080/metrics/application | grep -i count | grep -v TYPE
 ----
 .Terminal 3 Output
 ....

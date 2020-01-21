@@ -18,7 +18,7 @@ NOTE: This tutorial will require three terminal windows. Each command block will
 .Terminal 1
 ----
 $ git clone \
-  https://github.com/jclingan/oreilly-microprofile-quarkus-hands-on.git \
+  https://github.com/jclingan/oreilly-microprofile-tutorial.git \
   tutorial
 ----
 .Terminal 1 Output
