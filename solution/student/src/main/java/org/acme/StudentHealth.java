@@ -13,7 +13,7 @@ public class StudentHealth implements HealthCheck {
         double random = Math.random();
 
         return HealthCheckResponse
-            .named("UnstableServiceCheck")
+            .named("StudentLivenessReadiness")
             .state(random < .50 ? true : false)
             .withData("random", "" + random)
             .build();

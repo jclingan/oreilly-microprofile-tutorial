@@ -9,7 +9,7 @@ This section creates a "frontend" service that utilizes the type-safe MicroProfi
 [source,bash]
 ----
 $ cd tutorial/working
-$ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
+$ mvn io.quarkus:quarkus-maven-plugin:1.1.1.Final:create \
     -DprojectGroupId=org.acme \
     -DprojectArtifactId=frontend \
     -DclassName="org.acme.FrontendResource" \

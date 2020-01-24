@@ -46,7 +46,7 @@ public class FrontendResource {
 
         string += ",\n";
 
-        string += token.getClaimNames().stream().map(tok -> "\n " + tok + ": " + token.getClaim(tok))
+        string += token.getClaimNames().stream().map(claim -> "\n " + claim + ": " + token.getClaim(claim))
                 .collect(Collectors.toList()).toString();
         return string;
     }

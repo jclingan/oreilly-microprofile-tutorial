@@ -101,6 +101,8 @@ $ docker-compose up
 ----
 --
 
+<<<
+
 === Using jwtenizr
 
 https://github.com/AdamBien/jwtenizr[jwtenizr] is a handy tool created by http://adam-bien.com[Adam Bien] to create MicroProfile-ready tokens. This tutorial includes a `jwt` subdirectory that includes:
@@ -181,6 +183,7 @@ $ ./jwtenizr.sh
 ----
 
 NOTE: While running `jwtenizr.sh` will not add the `exp` claim to `jwt-token.json`, copying the generated token from `token.jwt` and pasting it into http://jwt.io[jwt.io] will show the token does include the `exp` claim.
+
 --
 
 . Use the new token in requests to the `frontend`

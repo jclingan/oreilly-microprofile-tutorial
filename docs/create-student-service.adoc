@@ -10,7 +10,7 @@ Create a simple Quarkus project as a starting point - the "student" service. A d
 [source,bash]
 ----
 $ cd tutorial/working
-$ mvn io.quarkus:quarkus-maven-plugin:1.1.0.Final:create \
+$ mvn io.quarkus:quarkus-maven-plugin:1.1.1.Final:create \
     -DprojectGroupId=org.acme \
     -DprojectArtifactId=student \
     -DclassName="org.acme.StudentResource" \
@@ -63,7 +63,7 @@ public class StudentResource {
 }
 ----
 
-NOTE: The generated project does not include a JAX-RS Application class. Quarkus will provide a default JAX-RS Application class if one is not provided by the developer. In addition, Quarkus RESTful resources are `@ApplicationScoped` by default when a scope is not specified. These are non-portable developer convenience features. These points are covered in the https://quarkus.io/guides/getting-started#the-jax-rs-resources[Quarkus Getting Started Guide].
+NOTE: Quarkus does not require a JAX-RS Application class, but will use it if provided. In addition, Quarkus RESTful resources are singletons (`@javax.inject.Singleton`). These are developer convenience features. These points are covered in the https://quarkus.io/guides/getting-started#the-jax-rs-resources[Quarkus Getting Started Guide].
 --
 
 +
@@ -106,7 +106,7 @@ hello
 // *********************************************
 '''
 
-. Experience live reload. In the StudentResource.java hello() method, replace "Hello" with "Howdy" and save the file
+. Try out live reload. In the StudentResource.java hello() method, replace "Hello" with "Howdy" and save the file
 +
 .StudentResource.java
 [source,java]
