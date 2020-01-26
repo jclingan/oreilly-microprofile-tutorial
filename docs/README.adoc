@@ -10,24 +10,31 @@ include::create-student-service.adoc[]
 <<<
 
 include::microprofile-config.adoc[]
+
 <<<
 
 include::microprofile-rest-client.adoc[]
+
 <<<
 
 include::microprofile-fault-tolerance.adoc[]
+
 <<<
 
 include::microprofile-metrics.adoc[]
+
 <<<
 
 include::microprofile-health.adoc[]
+
 <<<
 
 include::microprofile-jwt-rbac.adoc[]
+
 <<<
 
 include::microprofile-deploy.adoc[]
+
 <<<
 
 include::appendix.adoc[]
