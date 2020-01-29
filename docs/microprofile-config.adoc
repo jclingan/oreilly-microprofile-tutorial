@@ -367,14 +367,14 @@ unset DELAY
 // *********************************************
 '''
 
-. Change Quarkus HTTP port to 8081. Update application.proporties to look as follows:
+. Change Quarkus HTTP port to 8082. Update application.proporties to look as follows:
 +
 --
 .application.properties
 [source, property]
 ----
 #delay=2000
-quarkus.http.port=8081 // <1>
+quarkus.http.port=8082 // <1>
 ----
 <1> Insert `quarkus.http.port` property
 --
@@ -401,8 +401,8 @@ $ mvn quarkus:dev -Ddebug=5006
 .Terminal 2
 [source,property]
 ----
-# Note the port change to 8081!
-$ curl -i http://localhost:8081/student/list
+# Note the port change to 8082!
+$ curl -i http://localhost:8082/student/list
 ----
 
 .Terminal 2 Output (after 2 seconds)

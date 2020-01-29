@@ -57,7 +57,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
-@RegisterRestClient(baseUri = "http://localhost:8081")
+@RegisterRestClient(baseUri = "http://localhost:8082")
 @Path("/student")
 public interface StudentRestClient {
     @GET
@@ -135,7 +135,7 @@ Howdy
 ----
 @RegisterRestClient <1>
 ----
-<1> Removed `(baseUri = "http://localhost:8081")`
+<1> Removed `(baseUri = "http://localhost:8082")`
 --
 +
 // *********************************************
@@ -147,7 +147,7 @@ Howdy
 .frontend application.properties
 [source,properties]
 ----
-org.acme.StudentRestClient/mp-rest/uri=http://localhost:8081
+org.acme.StudentRestClient/mp-rest/uri=http://localhost:8082
 ----
 --
 +
@@ -195,7 +195,7 @@ Howdy
 .frontend application.properties
 [source,properties]
 ----
-StudentService/mp-rest/uri=http://localhost:8081
+StudentService/mp-rest/uri=http://localhost:8082
 ----
 --
 +

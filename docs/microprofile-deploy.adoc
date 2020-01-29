@@ -8,9 +8,9 @@ Build applications as a thin jar files, package them as docker files and start t
 .frontend/src/main/java/org/acme/application.properties
 [source,properties]
 ----
-#StudentService/mp-rest/uri=http://localhost:8081 <1>
-%dev.StudentService/mp-rest/uri=http://localhost:8081 <2>
-%prod.StudentService/mp-rest/uri=http://student:8081 <3>
+#StudentService/mp-rest/uri=http://localhost:8082 <1>
+%dev.StudentService/mp-rest/uri=http://localhost:8082 <2>
+%prod.StudentService/mp-rest/uri=http://student:8082 <3>
 ----
 <1> Comment out current uri
 <2> Properties prefixed with `%dev.` will be used while in development mode only (`mvn quarkus:dev`). 
@@ -101,7 +101,7 @@ a_1                                             >3000/tcp
 docker_prom_1   /bin/promethe   Up              0.0.0.0:9090-
                 us --config.f                   >9090/tcp    
 docker_studen   /deployments/   Up              8080/tcp, 0.0
-t_1             run-java.sh     (unhealthy)     .0.0:8081->80 <1>
+t_1             run-java.sh     (unhealthy)     .0.0:8082->80 <1>
                                                 81/tcp,      
                                                 8778/tcp,    
                                                 9779/tcp   

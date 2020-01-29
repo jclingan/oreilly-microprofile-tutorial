@@ -7,7 +7,7 @@ This section will create an endpoint that exposes the health of the student serv
 --
 .Terminal 3
 ....
-$ curl -i localhost:8081/health
+$ curl -i localhost:8082/health
 ....
 
 .Terminal 3 Output
