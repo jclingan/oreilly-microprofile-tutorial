@@ -114,7 +114,7 @@ Content-Type: application/json
 . Disable all fault tolerance annotations (except `@Fallback`). Useful for when running in a service mesh (e.g. Istio) environment. Commenting out any one of the timeout-disabling properties will disable the timeout.
 +
 --
-.frontend application.properties
+.frontend microprofile-config.properties
 [source,properties]
 ----
 # Disable fault tolerance globally
@@ -159,10 +159,10 @@ Content-Type: application/json
 // *********************************************
 '''
 
-. Comment out `MP_Fault_Tolerance_NonFallback_Enabled=false` in `application.properties`
+. Comment out `MP_Fault_Tolerance_NonFallback_Enabled=false` in `microprofile-config.properties`
 +
 --
-.frontend application.properties
+.frontend microprofile-config.properties
 [source,properties]
 ----
 # Disable fault tolerance globally
@@ -187,9 +187,9 @@ NOTE: Feel free to uncomment the more specific approaches (all timeouts or just 
 +
 --
 
-NOTE: MicroProfile Fault Tolerance allows any fault tolerance annotation parameter to be configured in application.properties, overriding the value in source code. 
+NOTE: MicroProfile Fault Tolerance allows any fault tolerance annotation parameter to be configured in microprofile-config.properties, overriding the value in source code. 
 
-.frontend application.properties
+.frontend microprofile-config.properties
 [source,properties]
 ----
 ...
@@ -221,10 +221,10 @@ Content-Type: application/json
 // *********************************************
 '''
 
-. Comment out timeout value in `application.properties` so annotation parameter values are used
+. Comment out timeout value in `microprofile-config.properties` so annotation parameter values are used
 +
 --
-.frontend application.properties
+.frontend microprofile-config.properties
 [source,properties]
 ----
 ...

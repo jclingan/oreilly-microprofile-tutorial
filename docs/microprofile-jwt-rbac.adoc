@@ -26,10 +26,10 @@ Because tokens are base64 encoded, they can be easily decoded. jwt.io can displa
 // *********************************************
 '''
 
-. Add required MicroProfile JWT RBAC properties to *both the student service and frontend service* `application.property` files.
+. Add required MicroProfile JWT RBAC properties to *both the student service and frontend service* `microprofile-config.properties` files.
 +
 --
-.application.properties
+.microprofile-config.properties
 [source,property]
 ----
 mp.jwt.verify.issuer=airhacks
@@ -376,9 +376,9 @@ This implies that the request to the student service is not being managed proper
 @Path("/student")
 public interface StudentRestClient {
 ----
-<1> Add `@RegisterClientHeaders` to frontend application.properties
+<1> Add `@RegisterClientHeaders` to frontend microprofile-config.properties
 
-.frontend/src/main/resource/application.properties
+.frontend/src/main/resources/META-INF/microprofile-config.properties
 [source,properties]
 ----
 org.eclipse.microprofile.rest.client.propagateHeaders=Authorization<1>

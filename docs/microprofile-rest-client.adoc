@@ -141,10 +141,10 @@ Howdy
 // *********************************************
 '''
 
-. Configure rest client `baseUri` in `application.properties`
+. Configure rest client `baseUri` in `microprofile-config.properties`
 +
 --
-.frontend application.properties
+.frontend microprofile-config.properties
 [source,properties]
 ----
 org.acme.StudentRestClient/mp-rest/uri=http://localhost:8082
@@ -189,10 +189,10 @@ Howdy
 // *********************************************
 '''
 
-. Update the frontend `application.properties` to utilize the `configKey`
+. Update the frontend `microprofile-config.properties` to utilize the `configKey`
 +
 --
-.frontend application.properties
+.frontend microprofile-config.properties
 [source,properties]
 ----
 StudentService/mp-rest/uri=http://localhost:8082
@@ -243,10 +243,10 @@ public List<String> listStudents() {
 // *********************************************
 '''
 
-. Specify a `StudentRestClient readTimeout` in frontend `application.properties` that will throw an exception if read time threshold is exceeded
+. Specify a `StudentRestClient readTimeout` in frontend `microprofile-config.properties` that will throw an exception if read time threshold is exceeded
 +
 --
-.frontend application.properties
+.frontend microprofile-config.properties
 [source,properties]
 ----
 StudentService/mp-rest/readTimeout = 1000 <1>
@@ -287,10 +287,10 @@ Unable to invoke request: java.net.SocketTimeoutException: Read timed out
 // *********************************************
 '''
 
-. Comment out the `readTimeout` property in `application.properties` to avoid exception
+. Comment out the `readTimeout` property in `microprofile-config.properties` to avoid exception
 +
 --
-.frontend application.properties
+.frontend microprofile-config.properties
 [source,properties]
 ----
 #StudentService/mp-rest/readTimeout = 1000 <1>

@@ -1,8 +1,8 @@
 == MicroProfile Config
 
-This section covers the MicroProfile CDI injection-based API for externalizing configuration. In these instructions, configuration parameters are stored in `src/main/resources/application.properties`.
+This section covers the MicroProfile CDI injection-based API for externalizing configuration. In these instructions, configuration parameters are stored in `src/main/resources/META-INF/microprofile-config.properties`.
 
-NOTE: Both Visual Studio Code and IntelliJ have Quarkus plugins. The instructor uses https://code.visualstudio.com/[Visual Studio Code]. While Quarkus supports the MicroProfile standard src/main/resources/META-INF/microprofile-config.properties file, the Quarkus Visual Studio code plugin https://github.com/redhat-developer/vscode-quarkus/issues/181[does not yet] support code completion and syntax highlighting of microprofile-config.properties. As a result, this tutorial uses `application.properties`.
+NOTE: While Quarkus supports MicroProfile APIs, it also supports much more than MicroProfile like Spring and Vert.x APIs. For that reason, https://quarkus.io/guides/[the Quarkus guides] refer to the more framework-agnostic `src/main/resources/application.properties`. Because this tutorial focuses on MicroProfile, it will use `src/main/resources/META-INF/microprofile-config.properties`. MicroProfile supports both, and property values defined in `application.properties` take precedence over values defined in `microprofile-config.properties`.
 
 . Create a `doDelay()` method to delay 3000 milliseconds and print "Waiting 3000 milliseconds" to stdout.
 +
@@ -129,10 +129,10 @@ Caused by: javax.enterprise.inject.spi.DeploymentException: No config value of t
 // *********************************************
 '''
 
-. Define `delay` property in `src/main/resources/application.properties`:
+. Define `delay` property in `src/main/resources/microprofile-config.properties`:
 +
 --
-.application.properties
+.microprofile-config.properties
 [source, property]
 ----
 # Configuration file
@@ -172,10 +172,10 @@ Content-Type: application/json
 // *********************************************
 '''
 
-. Comment out `delay` in `application.properties`
+. Comment out `delay` in `microprofile-config.properties`
 +
 --
-.application.properties
+.microprofile-config.properties
 [source,properties]
 ----
 # Configuration file
@@ -367,10 +367,10 @@ unset DELAY
 // *********************************************
 '''
 
-. Change Quarkus HTTP port to 8082. Update application.proporties to look as follows:
+. Change Quarkus HTTP port to 8082. Update microprofile-config.properties to look as follows:
 +
 --
-.application.properties
+.microprofile-config.properties
 [source, property]
 ----
 #delay=2000
@@ -423,10 +423,10 @@ Content-Type: application/json
 // *********************************************
 '''
 
-. In MicroProfile Config, comma-separated properties can be read as a `List`. Add the following to `application.properties`  to initialize the student list:
+. In MicroProfile Config, comma-separated properties can be read as a `List`. Add the following to `microprofile-config.properties`  to initialize the student list:
 +
 --
-.application.properties
+.microprofile-config.properties
 [source]
 ----
 students=Duke,John,Jane,Arun,Christina

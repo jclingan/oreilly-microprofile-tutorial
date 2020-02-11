@@ -5,7 +5,7 @@ Build applications as a thin jar files, package them as docker files and start t
 . Update student URI for docker deployment.
 +
 --
-.frontend/src/main/java/org/acme/application.properties
+.frontend/src/main/resources/META-INF/microprofile-config.properties
 [source,properties]
 ----
 #StudentService/mp-rest/uri=http://localhost:8082 <1>
