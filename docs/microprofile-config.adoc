@@ -265,7 +265,7 @@ export DELAY=4000
 .Terminal 1
 [source,bash]
 ----
-$ mvn quarkus:dev
+$ mvn compile quarkus:dev
 ----
 --
 +
@@ -319,7 +319,7 @@ Content-Type: application/json
 .Terminal 1
 [source, bash]
 ----
-$ mvn quarkus:dev -Ddelay=5000
+$ mvn compile quarkus:dev -Ddelay=5000
 ----
 --
 +
@@ -388,7 +388,7 @@ quarkus.http.port=8082 // <1>
 .Terminal 1
 [source, bash]
 ----
-$ mvn quarkus:dev -Ddebug=5006
+$ mvn compile quarkus:dev -Ddebug=5006
 ----
 --
 +

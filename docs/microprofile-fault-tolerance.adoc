@@ -496,7 +496,7 @@ This will result in circuit breaker entering "open" state and throws a CircuitBr
 .Terminal 1
 [source,bash]
 ----
-mvn quarkus:dev -Ddebug=5006
+mvn compile quarkus:dev -Ddebug=5006
 ----
 --
 +

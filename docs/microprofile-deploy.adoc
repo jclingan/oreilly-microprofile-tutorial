@@ -13,7 +13,7 @@ Build applications as a thin jar files, package them as docker files and start t
 %prod.StudentService/mp-rest/uri=http://student:8082 <3>
 ----
 <1> Comment out current uri
-<2> Properties prefixed with `%dev.` will be used while in development mode only (`mvn quarkus:dev`). 
+<2> Properties prefixed with `%dev.` will be used while in development mode only (`mvn compile quarkus:dev`). 
 <3> Properties prefixed with `%prod.` will be used when running in native mode or with `java -jar` only. When running via the docker-compose, the host will be "student".
 
 NOTE: Quarkus supports multiple configuration profiles.  There is also a `%test.` profile when running tests. Properties with no profile defined are always utilized, as has been the case so far in this lab.

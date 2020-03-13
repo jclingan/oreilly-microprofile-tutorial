@@ -77,7 +77,7 @@ NOTE: Quarkus does not require a JAX-RS Application class, but will use it if pr
 .Terminal 1
 [source,bash]
 ----
-$ mvn quarkus:dev
+$ mvn compile quarkus:dev
 ----
 --
 +
