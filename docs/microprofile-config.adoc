@@ -129,7 +129,7 @@ Caused by: javax.enterprise.inject.spi.DeploymentException: No config value of t
 // *********************************************
 '''
 
-. Define `delay` property in `src/main/resources/microprofile-config.properties`:
+. Define `delay` property in `src/main/resources/META-INF/microprofile-config.properties`:
 +
 --
 .microprofile-config.properties

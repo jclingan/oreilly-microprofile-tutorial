@@ -189,7 +189,7 @@ Howdy
 // *********************************************
 '''
 
-. Update the frontend `microprofile-config.properties` to utilize the `configKey`
+. Update the frontend `src/main/resources/META-INF/microprofile-config.properties` to utilize the `configKey`
 +
 --
 .frontend microprofile-config.properties
