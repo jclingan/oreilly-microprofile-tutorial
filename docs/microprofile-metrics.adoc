@@ -2,6 +2,22 @@
 
 This section will cover business and performance metrics that will be graphed in Prometheus and Grafana in the packaging and deployment section.
 
+. Enable MicroProfile 2.3 REST metrics
++
+--
+While REST metrics in MicroProfile Metrics are optional to support, Quarkus does support them. However, in Quarkus, metrics must be enabled on an extension-by-extension basis. See https://quarkus.io/guides/all-config .
+
+.FrontendService microprofile-config.properties
+[source,properties]
+----
+# ...
+# org.acme.FrontendResource/listStudents/Timeout/value=3000
+quarkus.resteasy.metrics.enabled=true <1>
+----
+<1> Enable rest metrics
+--
+// *********************************************
+'''
 . View all default metrics (in Prometheus/OpenMetrics format)
 +
 --
@@ -10,7 +26,7 @@ This section will cover business and performance metrics that will be graphed in
 ----
 $ curl -i http://localhost:8080/metrics
 ----
-.Terminal 3 Output
+.Terminal 3 Example Output
 ....
 ...
 ...
@@ -25,7 +41,6 @@ base_gc_time_total_seconds{name="PS MarkSweep"} 0.156
 
 NOTE: OpenMetrics format provides metadata like metrics type (ex: gauge) and description
 
-
 --
 // *********************************************
 '''
@@ -39,7 +54,7 @@ NOTE: OpenMetrics format provides metadata like metrics type (ex: gauge) and des
 $ curl -i -H "Accept: application/json" \
 http://localhost:8080/metrics/base
 ----
-.Terminal 3 Output
+.Terminal 3 Example Output
 ....
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: *
@@ -85,7 +100,7 @@ content-length: 630
 $ curl -i -H "Accept: application/json" \
 http://localhost:8080/metrics/vendor
 ----
-.Terminal 3 Output
+.Terminal 3 Example Output
 ....
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: *
@@ -134,7 +149,7 @@ content-length: 933
 $ curl -i -H "Accept: application/json" \
 http://localhost:8080/metrics/application
 ----
-.Terminal 3 Output
+.Terminal 3 Example Output
 ....
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: *
@@ -169,7 +184,9 @@ content-length: 1162
 .FrontendResource.java
 [source,java]
 ----
-@Counted     <1>
+@Counted(                           <1>
+    absolute = true,
+    name = "FrontendCounter")
 @Path("/frontend")
 public class FrontendResource {
 
@@ -190,7 +207,7 @@ public class FrontendResource {
 .FrontendResource.java
 [source,java]
 ----
-@Timed(absolute = true,                                      <1>
+@SimplyTimed(absolute = true,                                <1>
        name = "listStudentsTime",                            <2>
        displayName = "FrontendResource.listStudents()")      <3>
 @Retry(maxRetries = 4,delay = 1000)
@@ -216,31 +233,18 @@ public List<String> getStudents() {
 // *********************************************
 '''
 
-. View `@Count` metrics
+. View `@SimplyTimed` metrics
 +
 --
 .Terminal 3
 [source,bash]
 ----
-$ curl -i -s localhost:8080/metrics/application | grep -i time | grep -v TYPE
+$ curl -i -s localhost:8080/metrics | grep -i "elapsedTime" | grep -v TYPE
 ----
-.Terminal 3 Output
+.Terminal 3 Example Output
 ....
-application_listStudentsTime_rate_per_second 0.0064179960596986016
-application_listStudentsTime_one_min_rate_per_second 2.289677245305126E-5
-application_listStudentsTime_five_min_rate_per_second 0.0027034834474565605
-application_listStudentsTime_fifteen_min_rate_per_second 0.0026109713997948688
-application_listStudentsTime_min_seconds 0.712298109
-application_listStudentsTime_max_seconds 1.963374472
-application_listStudentsTime_mean_seconds 1.4476512202320395
-application_listStudentsTime_stddev_seconds 0.5326369162743406
-application_listStudentsTime_seconds_count 4.0
-application_listStudentsTime_seconds{quantile="0.5"} 1.91465394
-application_listStudentsTime_seconds{quantile="0.75"} 1.963374472
-application_listStudentsTime_seconds{quantile="0.95"} 1.963374472
-application_listStudentsTime_seconds{quantile="0.98"} 1.963374472
-application_listStudentsTime_seconds{quantile="0.99"} 1.963374472
-application_listStudentsTime_seconds{quantile="0.999"} 1.963374472
+application_listStudentsTime_elapsedTime_seconds 1.009317591
+base_REST_request_elapsedTime_seconds{class="org.acme.FrontendResource",method="listStudents"} 1.011809823
 ....
 
 
@@ -251,7 +255,7 @@ NOTE: Notice some metrics have curly braces around them "{}". These are metric t
 // *********************************************
 '''
 
-. View `@Timed` metrics
+. View `@Counted` metrics
 +
 --
 .Terminal 3
@@ -259,13 +263,12 @@ NOTE: Notice some metrics have curly braces around them "{}". These are metric t
 ----
 $ curl -i localhost:8080/metrics/application | grep -i count | grep -v TYPE
 ----
-.Terminal 3 Output
+.Terminal 3 Example Output
 ....
-application_FrontendResourceCounter_listStudentsFallback_total 0.0
-application_FrontendResourceCounter_FrontendResource_total 1.0
-application_FrontendResourceCounter_hello_total 3.0
-application_FrontendResourceCounter_listStudents_total 4.0
-application_listStudentsTime_seconds_count 4.0
+application_FrontendCounter_listStudentsFallback_total 0.0
+application_FrontendCounter_hello_total 0.0
+application_FrontendCounter_FrontendResource_total 1.0
+application_FrontendCounter_listStudents_total 2.0
 ....
 --
 +
@@ -306,7 +309,28 @@ public List<String> listStudents() {
 // *********************************************
 '''
 
-. Assign list size to `numStudents` in `listStudentsFallback`
+. Replace Fallback class with Fallback method
++
+--
+.FrontendResource.java
+[source,java]
+----
+    @CircuitBreaker(
+        requestVolumeThreshold = 4,
+        failureRatio = 0.5,
+        delay = 10000,
+        successThreshold = 2)
+    // @Fallback(value = ListStudentsFallbackHandler.class) <1>
+    @Fallback(fallbackMethod = "listStudentsFallback")      <2>
+----
+<1> Comment out @Fallback that falls back to a handler class
+<2> Create a new @Fallback that falls back to method
+--
++
+// *********************************************
+'''
+
+. Create a Fallback method
 +
 --
 .FrontendResource.java
@@ -314,12 +338,13 @@ public List<String> listStudents() {
 ----
 public List<String> listStudentsFallback() {
     List<String> students = Arrays.asList("Smart Sam", "Genius Gabby", "A-Student Angie", "Intelligent Irene");
+    
     numStudents = students.size();<1>
 
     return students;
 }
 ----
-<1> Add this
+<1> This method also stores the student size
 --
 +
 // *********************************************

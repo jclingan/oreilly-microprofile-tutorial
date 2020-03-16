@@ -92,15 +92,6 @@ Principal: null
 ----
 $ export TOKEN="eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw"
 ----
-
-.Terminal 3 Output
-....
-HTTP/1.1 200 OK
-Content-Length: 15
-Content-Type: text/plain;charset=UTF-8
-
-Principal: demo@acme.org
-....
 --
 +
 // *********************************************
@@ -349,7 +340,7 @@ public List<String> listStudents() {
 .Terminal 3
 [source,bash]
 ----
-$ curl -i -H'Authorization: Bearer eyJraWQiOiJqd3Qua2V5IiwidHlwIjoiSldUIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJ1c2VyXC80Mzk3MSIsInVwbiI6ImRlbW9AYWNtZS5vcmciLCJteWMiOiJNeSBDdXN0b20gQ2xhaW0iLCJhdXRoX3RpbWUiOjE1Nzg2NTEyODMsImlzcyI6ImFpcmhhY2tzIiwiZ3JvdXBzIjpbInVzZXIiLCJhZG1pbiJdLCJleHAiOjMxNTU4ODI4OTgsImlhdCI6MTU3ODY1MTI4MywianRpIjoiYWlyaGFja3Mtand0LXVuaXF1ZS1pZC0xMjM0MjE0MiJ9.Eaqe3sTH64doIVW3on25EA_uD9XrfppndiweUNLVbFK3KxaIfXaAdQ4N9IkQG6Iw0A7I7kngjeSHwb2DzH8rQE8yp7sCtey6kmC689eQC0j2k-YbyGZ68xnsMj5taOBVGH_ZSWC6E1L-Gk-GgcTvX6I3SaBC8pwZ267q6psknqlAtfD2JoE7ezEb7LrLVwP1vaGqKzC2X6pv5J-07DNBqe75uBWQyqX_WE856ug3uqWcHtNck8nqU6VhwXqxHZ6vkRlx9VoMgFUF851D-WuKMCUdfXJHekDyKmjYuyLiw7jtQSdliY3ONOXgFm_uzjKGuZ1VKPdQXyx7GQ9NsNTYfw' http://localhost:8080/frontend/list
+$ curl -i -H"Authorization: Bearer ${TOKEN}" http://localhost:8080/frontend/list
 ----
 
 .Terminal 3 Output

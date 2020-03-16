@@ -251,13 +251,14 @@ image::images/Select_Dashboard.png[Grafana-Login,400,300]
 --
 .Terminal 2
 ----
-$ curl -i localhost:8080/student/list
-$ curl -i localhost:8080/student/list
-$ curl -i localhost:8080/student/list
-$ curl -i localhost:8080/student/list
-$ curl -i localhost:8080/student/list
+$ curl -i -H"Authorization: Bearer ${TOKEN}" http://localhost:8080/frontend/list
+$ curl -i -H"Authorization: Bearer ${TOKEN}" http://localhost:8080/frontend/list
+$ curl -i -H"Authorization: Bearer ${TOKEN}" http://localhost:8080/frontend/list
+$ curl -i -H"Authorization: Bearer ${TOKEN}" http://localhost:8080/frontend/list
+$ curl -i -H"Authorization: Bearer ${TOKEN}" http://localhost:8080/frontend/list
 ----
---
+--image::http://localhost:3000/public/img/grafana_icon.svg[]
+image::http://localhost:3000/public/img/grafana_typelogo.svg[]
 +
 // *********************************************
 '''
