@@ -223,7 +223,7 @@ public String tokeninfo() {
 @Retry(maxRetries = 4, delay = 1000)
 @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5,
             delay = 10000, successThreshold = 2)
-@Fallback(fallbackMethod = "getStudentsFallback")
+@Fallback(value = ListStudentsFallbackHandler.class)
 @GET
 @Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
@@ -294,7 +294,7 @@ NOTE: This time access is denied because the demo user does not belong to the "s
 @Retry(maxRetries = 4, delay = 1000)
 @CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5,
             delay = 10000, successThreshold = 2)
-@Fallback(fallbackMethod = "getStudentsFallback")
+@Fallback(value = ListStudentsFallbackHandler.class)
 @GET
 @Path("/list")
 @Produces(MediaType.APPLICATION_JSON)

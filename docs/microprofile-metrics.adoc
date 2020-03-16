@@ -199,7 +199,7 @@ public class FrontendResource {
     failureRatio = 0.5, 
     delay = 10000,
     successThreshold = 2)
-@Fallback(fallbackMethod = "getStudentsFallback")
+@Fallback(value = ListStudentsFallbackHandler.class)
 @GET
 @Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
