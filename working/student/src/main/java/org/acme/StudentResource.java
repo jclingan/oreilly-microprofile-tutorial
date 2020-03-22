@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -28,6 +29,7 @@ public class StudentResource {
         return "Howdy";
     }
 
+    @RolesAllowed("admin")
     @GET
     @Path("/list")
     @Produces(MediaType.APPLICATION_JSON)
