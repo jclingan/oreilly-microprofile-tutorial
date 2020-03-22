@@ -544,7 +544,7 @@ public class CircuitBreakerTracker {
     requestVolumeThreshold = 4,     <4>
     failureRatio = 0.5,             <5>
     delay = 10000,                  <6>
-    successThreshold = 2            <7>
+    successThreshold = 3            <7>
     )
 @Fallback(value = ListStudentsFallbackHandler.class)
 @GET

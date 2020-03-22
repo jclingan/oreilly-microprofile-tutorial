@@ -10,7 +10,7 @@ Create a simple Quarkus project as a starting point - the "student" service. A d
 [source,bash]
 ----
 $ cd tutorial/working
-$ mvn io.quarkus:quarkus-maven-plugin:1.2.0.Final:create \
+$ mvn io.quarkus:quarkus-maven-plugin:1.3.0.Final:create \
     -DprojectGroupId=org.acme \
     -DprojectArtifactId=student \
     -DclassName="org.acme.StudentResource" \
