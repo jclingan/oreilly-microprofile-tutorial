@@ -208,22 +208,28 @@ public String tokeninfo() {
 }
 
 @RolesAllowed("superuser")    <2>
+@SimplyTimed(
+    absolute = true,
+    name = "listStudentsTime",
+    displayName = "FrontendResource.listStudents()")
+// @Fallback(value = ListStudentsFallbackHandler.class)
+@Fallback(fallbackMethod = "listStudentsFallback")
 // @Timeout
-@Timed(absolute = true, name = "getStudentsTime",
-       displayName = "FrontendResource getStudents() Time")
-@Retry(maxRetries = 4, delay = 1000)
-@CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5,
-            delay = 10000, successThreshold = 2)
-@Fallback(value = ListStudentsFallbackHandler.class)
+// @Retry
+@CircuitBreaker(
+    requestVolumeThreshold = 4,
+    failureRatio = .5,
+    delay = 10000,
+    successThreshold = 3)
 @GET
-@Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
-public List<String> getStudents() {
+@Path("/list")
+public List<String> listStudents() {
     return student.listStudents();
 }
 ----
 <1> Apply `@RolesAllowed("user")` to the getToken() method
-<2> Apply `@RolesAllowed("superuser")` to the getStudents() method
+<2> Apply `@RolesAllowed("superuser")` to the listStudents() method
 --
 // *********************************************
 '''
@@ -279,17 +285,23 @@ NOTE: This time access is denied because the demo user does not belong to the "s
 [source,java]
 ----
 @RolesAllowed("admin")    <1>
+@SimplyTimed(
+    absolute = true,
+    name = "listStudentsTime",
+    displayName = "FrontendResource.listStudents()")
+// @Fallback(value = ListStudentsFallbackHandler.class)
+@Fallback(fallbackMethod = "listStudentsFallback")
 // @Timeout
-@Timed(absolute = true, name = "getStudentsTime",
-       displayName = "FrontendResource getStudents() Time")
-@Retry(maxRetries = 4, delay = 1000)
-@CircuitBreaker(requestVolumeThreshold = 4, failureRatio = 0.5,
-            delay = 10000, successThreshold = 2)
-@Fallback(value = ListStudentsFallbackHandler.class)
+// @Retry
+@CircuitBreaker(
+    requestVolumeThreshold = 4,
+    failureRatio = .5,
+    delay = 10000,
+    successThreshold = 3)
 @GET
-@Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
-public List<String> getStudents() {
+@Path("/list")
+public List<String> listStudents() {
     return student.listStudents();
 }
 ----
@@ -335,7 +347,7 @@ public List<String> listStudents() {
     return students;
 }
 ----
-<1> Change "superuser" to "admin"
+<1> Secure with "admin" role
 
 .Terminal 3
 [source,bash]

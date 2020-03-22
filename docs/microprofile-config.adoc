@@ -373,7 +373,7 @@ unset DELAY
 .microprofile-config.properties
 [source, property]
 ----
-#delay=2000
+#delay=2500
 quarkus.http.port=8082 // <1>
 ----
 <1> Insert `quarkus.http.port` property
@@ -441,11 +441,12 @@ students=Duke,John,Jane,Arun,Christina
 --
 .StudentResource.java
 [source,java]
------
-@Inject
+----
+@Inject                                    // <1>
 @ConfigProperty(name = "students")
 List<String> students = new ArrayList<>();
------
+----
+<1> Add @Inject and @ConfigProperty annotations
 --
 +
 // *********************************************
@@ -456,7 +457,7 @@ List<String> students = new ArrayList<>();
 .Terminal 1
 [source, bash]
 ----
-$ curl -i http://localhost:8080/student/list
+$ curl -i http://localhost:8082/student/list
 ----
 .Terminal 2 Output (after 2 seconds)
 ....

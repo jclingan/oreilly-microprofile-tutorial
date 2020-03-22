@@ -201,7 +201,7 @@ public class FrontendResource {
 // *********************************************
 '''
 
-. Time `getStudents()` method duration
+. Time `listStudents()` method duration
 +
 --
 .FrontendResource.java
@@ -220,7 +220,7 @@ public class FrontendResource {
 @GET
 @Path("/list")
 @Produces(MediaType.APPLICATION_JSON)
-public List<String> getStudents() {
+public List<String> listStudents() {
     List<String> students = student.listStudents();
     
     return students;
@@ -337,7 +337,11 @@ public List<String> listStudents() {
 [source,java]
 ----
 public List<String> listStudentsFallback() {
-    List<String> students = Arrays.asList("Smart Sam", "Genius Gabby", "A-Student Angie", "Intelligent Irene");
+    List<String> students = Arrays.asList(
+        "Smart Sam",
+        "Genius Gabby",
+        "A-Student Angie",
+        "Intelligent Irene");
     
     numStudents = students.size();<1>
 
