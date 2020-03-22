@@ -39,7 +39,7 @@ public class StudentResource {
     void doDelay() {
         int delayTime;
         try {
-            delayTime = delay;
+            delayTime=(int)(Math.random()*delay);
             System.out.println("** Waiting " + delayTime + "ms **");
             TimeUnit.MILLISECONDS.sleep(delayTime);
         } catch (InterruptedException e) {
