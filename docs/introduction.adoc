@@ -12,6 +12,16 @@ This pattern flows quickly due to Quarkus' Live Coding feature, and makes checki
 
 NOTE: This tutorial will require three terminal windows. Each command block will display the terminal where the command is to be run - _Terminal 1_, _Terminal 2_, or _Terminal 3_. As the tutorial progresses, it helps to organize the terminals on your screen so they can all be viewed at the same time. In addition, each code block will show the name of the file to be edited (ex: "StudentResource.java")
 
+== Minimum Requirements
+
+. Java 8, 11, 12, 13, or 14
+. Native compilation - GraalVM 19.3.1 or 20.0.0
+.. Assign at least 4GB RAM and 2 vcpu to your Docker VM
+.. ... or be very, very patient
+. Maven 3.6.2+
+
+== Setup Local Repository
+
 . Clone the project to your local system
 +
 --
