@@ -4,9 +4,11 @@
 :toc:
 
 include::introduction.adoc[]
+
 <<<
 
 include::create-student-service.adoc[]
+
 <<<
 
 include::microprofile-config.adoc[]
